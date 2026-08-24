@@ -28,6 +28,7 @@ export class Client {
 	public onMessageReceived?: (message: Message) => void;
 	public onChannelMemberJoined?: (member: ChannelMember) => void;
 	public onChannelMemberLeft?: (member: ChannelMember) => void;
+	public onWebRTCEvent?: (socketId: string, event: WebRTCEvent) => void;
 
 	public close: typeof JsonRPCClient.prototype.close;
 
@@ -80,6 +81,10 @@ export class Client {
 				(m) => m.socket_id !== member.socket_id
 			);
 			this.onChannelMemberLeft?.(member);
+		});
+
+		this._rpc.on("webrtcEvent", (socketId, event) => {
+			this.onWebRTCEvent?.(socketId, event);
 		});
 	}
 
@@ -161,6 +166,14 @@ export class Client {
 		this._session!.profile = profile;
 
 		return profile;
+	}
+
+	async sendWebRTCEvent(socket_id: string, event: WebRTCEvent) {
+		if (!this.isAuth) {
+			throw new Error("Not authenticated");
+		}
+
+		await this._rpc.call("sendWebRTCEvent", socket_id, event);
 	}
 
 	get url() {
@@ -266,6 +279,18 @@ export interface CurrentChannel {
 	channel: Channel;
 	members: ChannelMember[];
 }
+export type WebRTCEvent =
+	| {
+			type: "answer" | "offer" | "pranswer" | "rollback";
+			sdp?: string;
+	  }
+	| {
+			type: "candidate";
+			candidate?: string;
+			sdpMLineIndex?: number | null;
+			sdpMid?: string | null;
+			usernameFragment?: string | null;
+	  };
 
 interface ServerToClientEvents {
 	connectionReady(id: string): void;
@@ -273,6 +298,7 @@ interface ServerToClientEvents {
 	onChannelMemberJoined: (member: ChannelMember) => void;
 	onChannelMemberLeft: (member: ChannelMember) => void;
 	channelDeleted(channel: Channel): void;
+	webrtcEvent(socket_id: string, event: WebRTCEvent): void;
 }
 
 interface ClientToServerEvents {
@@ -290,4 +316,6 @@ interface ClientToServerEvents {
 
 	updateProfile(name: string): Profile;
 	getProfile(public_key?: string): Profile | undefined;
+
+	sendWebRTCEvent(socketId: string, event: WebRTCEvent): void;
 }

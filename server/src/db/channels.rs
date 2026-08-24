@@ -3,7 +3,7 @@ use crate::*;
 use uuid::Uuid;
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type)]
 pub enum ChannelType {
 	Text = 0,
 	Voice = 1,
