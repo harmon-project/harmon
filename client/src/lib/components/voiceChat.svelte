@@ -16,7 +16,9 @@
 
 	async function getLocalStream() {
 		try {
-			stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			stream = await navigator.mediaDevices.getUserMedia({
+				audio: { noiseSuppression: true, echoCancellation: true }
+			});
 
 			for (const [_, peer] of peers) {
 				for (const track of stream.getTracks()) {
