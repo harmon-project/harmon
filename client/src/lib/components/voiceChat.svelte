@@ -3,8 +3,8 @@
 	import type { Client, WebRTCEvent } from "harmon-lib";
 	import { push } from "./toast.svelte";
 	import { SvelteMap } from "svelte/reactivity";
-	import { PUBLIC_ICE_SERVERS } from "$env/static/public";
 	import { error, info } from "$lib/log";
+	import iceServers from "$lib/assets/iceServers.json";
 
 	const { client }: { client: Client } = $props();
 
@@ -68,9 +68,7 @@
 	async function syncPeers() {
 		for (const member of members) {
 			if (!peers.has(member.socket_id) && member.socket_id != socketId) {
-				const peer = new RTCPeerConnection({
-					iceServers: [{ urls: PUBLIC_ICE_SERVERS }]
-				});
+				const peer = new RTCPeerConnection({ iceServers });
 
 				peer.onconnectionstatechange = () => {
 					info(`Connection state ${member.socket_id}:`, peer.connectionState);
