@@ -72,9 +72,33 @@
 					iceServers: [{ urls: PUBLIC_ICE_SERVERS }]
 				});
 
+				peer.onconnectionstatechange = () => {
+					info(`Connection state ${member.socket_id}:`, peer.connectionState);
+				};
+
+				peer.oniceconnectionstatechange = () => {
+					info(`ICE state ${member.socket_id}:`, peer.iceConnectionState);
+				};
+
+				peer.onsignalingstatechange = () => {
+					info(`Signaling state ${member.socket_id}:`, peer.signalingState);
+				};
+
 				peer.ontrack = (event) => {
 					info(`Received track from ${member.socket_id}: `, event);
 					const stream = event.streams[0] ?? new MediaStream([event.track]);
+
+					event.track.onmute = () => {
+						info(`Remote track MUTED from ${member.socket_id}`);
+					};
+
+					event.track.onunmute = () => {
+						info(`Remote track UNMUTED from ${member.socket_id}`);
+					};
+
+					event.track.onended = () => {
+						info(`Remote track ENDED from ${member.socket_id}`);
+					};
 
 					streams.set(member.socket_id, stream);
 				};
