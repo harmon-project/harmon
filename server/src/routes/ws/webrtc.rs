@@ -15,8 +15,11 @@ pub enum WebRTCEvent {
 	},
 	Candidate {
 		candidate: String,
+		#[serde(rename = "sdpMid")]
 		sdp_mid: Option<String>,
+		#[serde(rename = "sdpMLineIndex")]
 		sdp_mline_index: Option<u16>,
+		#[serde(rename = "usernameFragment")]
 		username_fragment: Option<String>,
 	},
 	Rollback,

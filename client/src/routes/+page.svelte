@@ -12,6 +12,7 @@
 	import ChatsPanel from "$lib/components/chatsPanel.svelte";
 	import SidePanel from "$lib/components/sidePanel.svelte";
 	import EditProfile from "$lib/components/editProfile.svelte";
+	import VoiceChat from "$lib/components/voiceChat.svelte";
 
 	const auth = useAuth();
 
@@ -123,7 +124,11 @@
 			/>
 			{#if client.currentChannel}
 				{#key client.currentChannel}
-					<Chat {client} />
+					{#if client.currentChannel.channel.type == "Text"}
+						<Chat {client} />
+					{:else if client.currentChannel.channel.type == "Voice"}
+						<VoiceChat {client} />
+					{/if}
 				{/key}
 			{/if}
 		</div>
