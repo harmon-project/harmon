@@ -4,6 +4,7 @@
 	import { push } from "./toast.svelte";
 	import { SvelteMap } from "svelte/reactivity";
 	import { PUBLIC_ICE_SERVERS } from "$env/static/public";
+	import { error, info } from "$lib/log";
 
 	const { client }: { client: Client } = $props();
 
@@ -40,6 +41,8 @@
 
 		if (!peer) return;
 
+		info(`Received WebRTC event from ${socketId}: `, event);
+
 		switch (event.type) {
 			case "offer": {
 				await peer.setRemoteDescription(event);
@@ -70,10 +73,14 @@
 				});
 
 				peer.ontrack = (event) => {
-					streams.set(member.socket_id, event.streams[0]);
+					info(`Received track from ${member.socket_id}: `, event);
+					const stream = event.streams[0] ?? new MediaStream([event.track]);
+
+					streams.set(member.socket_id, stream);
 				};
 				peer.onicecandidate = async (event) => {
 					if (!event.candidate) return;
+					
 					const candidate: WebRTCEvent = {
 						type: "candidate",
 						candidate: event.candidate?.candidate,
@@ -81,19 +88,27 @@
 						sdpMLineIndex: event.candidate?.sdpMLineIndex,
 						usernameFragment: event.candidate?.usernameFragment
 					};
+					info(`Sending ICE candidate to ${member.socket_id}: `, candidate);
 					await client.sendWebRTCEvent(member.socket_id, candidate);
+				};
+				peer.onicecandidateerror = (event) => {
+					error(`ICE candidate error for ${member.socket_id}: `, event);
 				};
 
 				for (const track of stream.getTracks()) {
+					info(`Adding local track to peer for ${member.socket_id}: `, track);
 					peer.addTrack(track, stream);
 				}
 
 				peers.set(member.socket_id, peer);
 
 				if (socketId > member.socket_id) {
+					info(`Creating offer for ${member.socket_id}`);
 					const offer = await peer.createOffer({ offerToReceiveAudio: true });
 
+					info(`Setting local description for ${member.socket_id}: `, offer);
 					await peer.setLocalDescription(offer);
+					info(`Sending offer to ${member.socket_id}: `, offer);
 					await client.sendWebRTCEvent(member.socket_id, offer);
 				}
 			}
