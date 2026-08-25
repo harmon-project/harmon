@@ -80,7 +80,7 @@
 				};
 				peer.onicecandidate = async (event) => {
 					if (!event.candidate) return;
-					
+
 					const candidate: WebRTCEvent = {
 						type: "candidate",
 						candidate: event.candidate?.candidate,
