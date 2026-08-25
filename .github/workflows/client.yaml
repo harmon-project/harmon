@@ -56,6 +56,7 @@ jobs:
             npm run build
           ) && \
           (
+            cp .env.example .env && \
             cd client && \
             npm ci && \
             npm run tauri icon ./src/lib/assets/icon.png && \
