@@ -161,7 +161,7 @@
 		for (const [_, peer] of peers) {
 			peer.close();
 		}
-		
+
 		peers.clear();
 		streams.clear();
 	});
