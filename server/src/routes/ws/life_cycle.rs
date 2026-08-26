@@ -4,8 +4,8 @@ use crate::*;
 pub async fn connect(socket: wspc::Socket) -> error::Result<()> {
 	log::info!("socket {} connected", socket.id());
 
-	socket.join("global")?;
-	socket.join(socket.id())?;
+	socket.join("global").await?;
+	socket.join(socket.id()).await?;
 
 	socket.send("connectionReady", (socket.id(),))?;
 
@@ -31,7 +31,7 @@ pub async fn disconnect(app: wspc::App, socket: wspc::Socket) -> error::Result<(
 			socket_id: socket.id(),
 		};
 
-		socket.leave(channel)?;
+		socket.leave(channel).await?;
 		room.emit("onChannelMemberLeft", (member,))?;
 	};
 
