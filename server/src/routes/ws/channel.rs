@@ -101,7 +101,6 @@ pub async fn join_channel(app: wspc::App, socket: wspc::Socket, params: wspc::Pa
 
 	let channel: Channel = db::get_channel(&state.db_pool, *params.channel_id).await?.into();
 	let room = app.room(params.channel_id);
-	let sockets = room.sockets();
 
 	let member = ChannelMember {
 		profile: profile.into(),
@@ -118,10 +117,11 @@ pub async fn join_channel(app: wspc::App, socket: wspc::Socket, params: wspc::Pa
 
 	room.emit("onChannelMemberJoined", (member,))?;
 
-	let mut members = Vec::new();
-
 	socket.join(params.channel_id)?;
 	socket.set_state(params.channel_id);
+
+	let sockets = room.sockets();
+	let mut members = Vec::new();
 
 	for socket in sockets {
 		let Some(auth) = socket.get_state::<auth::AuthenticatedPayload>() else { continue };
