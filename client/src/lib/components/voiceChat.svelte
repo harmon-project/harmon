@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onDestroy, onMount } from "svelte";
 	import type { Client, WebRTCEvent } from "harmon-lib";
 	import { push } from "./toast.svelte";
 	import { SvelteMap } from "svelte/reactivity";
@@ -151,6 +151,19 @@
 
 		await getLocalStream();
 		await syncPeers();
+	});
+
+	onDestroy(() => {
+		client.onWebRTCEvent = undefined;
+		client.onChannelMemberJoined = undefined;
+		client.onChannelMemberLeft = undefined;
+
+		for (const [_, peer] of peers) {
+			peer.close();
+		}
+		
+		peers.clear();
+		streams.clear();
 	});
 </script>
 
