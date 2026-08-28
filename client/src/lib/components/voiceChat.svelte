@@ -18,7 +18,7 @@
 
 	const members = $derived(client.currentChannel?.members ?? []);
 	const socketId = $derived(client.id!);
-	
+
 	async function getLocalStream() {
 		try {
 			stream = await navigator.mediaDevices.getUserMedia({
@@ -41,9 +41,9 @@
 	}
 
 	async function resumeAudio() {
-		try{
+		try {
 			await audioContext.resume();
-		}catch(err){
+		} catch (err) {
 			push("Error resuming audio. Check your browser permissions.");
 		}
 	}
@@ -178,7 +178,7 @@
 
 	onDestroy(() => {
 		audioContext.onstatechange = null;
-		
+
 		client.onWebRTCEvent = undefined;
 		client.onChannelMemberJoined = undefined;
 		client.onChannelMemberLeft = undefined;
@@ -198,7 +198,10 @@
 {#if !audioReady}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div onclick={resumeAudio} class="flex w-screen h-screen items-center justify-center z-10 fixed top-0 left-0 bg-gray-900 cursor-pointer">
+	<div
+		onclick={resumeAudio}
+		class="fixed top-0 left-0 z-10 flex h-screen w-screen cursor-pointer items-center justify-center bg-gray-900"
+	>
 		<p class="text-white">Click to enable audio</p>
 	</div>
 {/if}
