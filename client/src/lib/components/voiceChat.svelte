@@ -8,13 +8,17 @@
 
 	const { client }: { client: Client } = $props();
 
+	let audioContext = $state(new AudioContext());
 	let stream = $state(new MediaStream());
 	let streams = new SvelteMap<string, MediaStream>();
+	let sources = new SvelteMap<string, MediaStreamAudioSourceNode>();
 	let peers = new SvelteMap<string, RTCPeerConnection>();
+
+	let audioReady = $state(audioContext.state == "running");
 
 	const members = $derived(client.currentChannel?.members ?? []);
 	const socketId = $derived(client.id!);
-
+	
 	async function getLocalStream() {
 		try {
 			stream = await navigator.mediaDevices.getUserMedia({
@@ -32,8 +36,20 @@
 				}
 			}
 		} catch (err) {
-			push("Erro ao acessar o microfone. Verifique as permissões do navegador.");
+			push("Error accessing the microphone. Check your browser permissions.");
 		}
+	}
+
+	async function resumeAudio() {
+		try{
+			await audioContext.resume();
+		}catch(err){
+			push("Error resuming audio. Check your browser permissions.");
+		}
+	}
+
+	function onAudioStateChange() {
+		audioReady = audioContext.state == "running";
 	}
 
 	async function onWebRTCEvent(socketId: string, event: WebRTCEvent) {
@@ -97,6 +113,10 @@
 						info(`Remote track ENDED from "${member.socket_id}"`);
 					};
 
+					const source = audioContext.createMediaStreamSource(stream);
+					source.connect(audioContext.destination);
+
+					sources.set(member.socket_id, source);
 					streams.set(member.socket_id, stream);
 				};
 				peer.onicecandidate = async (event) => {
@@ -136,14 +156,18 @@
 		}
 		for (const [socketId, peer] of peers) {
 			if (!members.find((member) => member.socket_id == socketId)) {
-				peer.close();
-				peers.delete(socketId);
+				sources.get(socketId)?.disconnect();
+				sources.delete(socketId);
 				streams.delete(socketId);
+				peers.delete(socketId);
+				peer.close();
 			}
 		}
 	}
 
 	onMount(async () => {
+		audioContext.onstatechange = onAudioStateChange;
+
 		client.onWebRTCEvent = onWebRTCEvent;
 		client.onChannelMemberLeft = syncPeers;
 		client.onChannelMemberJoined = syncPeers;
@@ -153,19 +177,31 @@
 	});
 
 	onDestroy(() => {
+		audioContext.onstatechange = null;
+		
 		client.onWebRTCEvent = undefined;
 		client.onChannelMemberJoined = undefined;
 		client.onChannelMemberLeft = undefined;
 
-		for (const [_, peer] of peers) {
+		for (const [socketId, peer] of peers) {
+			sources.get(socketId)?.disconnect();
 			peer.close();
 		}
 
 		peers.clear();
 		streams.clear();
+		sources.clear();
+		audioContext.close();
 	});
 </script>
 
+{#if !audioReady}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div onclick={resumeAudio} class="flex w-screen h-screen items-center justify-center z-10 fixed top-0 left-0 bg-gray-900 cursor-pointer">
+		<p class="text-white">Click to enable audio</p>
+	</div>
+{/if}
 <div class="flex h-full w-full flex-col bg-gray-900">
 	<div class="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
 		{#each members as member}
@@ -174,9 +210,6 @@
 					<span class="font-medium">{member.profile.name}</span>
 					<span class="text-xs text-gray-400">{member.socket_id}</span>
 				</div>
-				{#if streams.get(member.socket_id)}
-					<audio autoplay playsinline srcObject={streams.get(member.socket_id)}></audio>
-				{/if}
 			</div>
 		{/each}
 	</div>
