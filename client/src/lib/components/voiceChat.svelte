@@ -8,8 +8,8 @@
 
 	const { client }: { client: Client } = $props();
 
-	let audioContext = $state(new AudioContext());
-	let stream = $state(new MediaStream());
+	let audioContext = new AudioContext();
+	let stream = new MediaStream();
 	let streams = new SvelteMap<string, MediaStream>();
 	let sources = new SvelteMap<string, MediaStreamAudioSourceNode>();
 	let peers = new SvelteMap<string, RTCPeerConnection>();
