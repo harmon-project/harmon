@@ -8,35 +8,56 @@
 
 	const { client }: { client: Client } = $props();
 
+	let localStream: MediaStream | undefined;
 	let audioContext = new AudioContext();
-	let stream = new MediaStream();
 	let streams = new SvelteMap<string, MediaStream>();
-	let sources = new SvelteMap<string, MediaStreamAudioSourceNode>();
-	let peers = new SvelteMap<string, RTCPeerConnection>();
+	let peers = new Map<string, RTCPeerConnection>();
+	let sources = new Map<string, MediaStreamAudioSourceNode>();
 
 	let audioReady = $state(audioContext.state == "running");
 
 	const members = $derived(client.currentChannel?.members ?? []);
 	const socketId = $derived(client.id!);
 
+	function audioSink(node: HTMLAudioElement, stream?: MediaStream) {
+		const update = (next?: MediaStream) => {
+			if (node.srcObject != next) {
+				node.srcObject = next ?? null;
+			}
+			node.play().catch(() => {});
+		};
+
+		const destroy = () => {
+			node.srcObject = null;
+		};
+
+		update(stream);
+
+		return {
+			update,
+			destroy
+		};
+	}
+
 	async function getLocalStream() {
 		try {
-			stream = await navigator.mediaDevices.getUserMedia({
+			localStream = await navigator.mediaDevices.getUserMedia({
 				audio: { noiseSuppression: true, echoCancellation: true }
 			});
 
 			for (const [_, peer] of peers) {
-				for (const track of stream.getTracks()) {
+				for (const track of localStream.getTracks()) {
 					const hasSender = peer
 						.getSenders()
 						.some((sender) => sender.track?.id === track.id);
 					if (!hasSender) {
-						peer.addTrack(track, stream);
+						peer.addTrack(track, localStream);
 					}
 				}
 			}
 		} catch (err) {
-			push("Error accessing the microphone. Check your browser permissions.");
+			error("Failed to acquire local media stream: ", err);
+			push("Error acquiring local media stream.");
 		}
 	}
 
@@ -82,98 +103,107 @@
 
 	async function syncPeers() {
 		for (const member of members) {
-			if (!peers.has(member.socket_id) && member.socket_id != socketId) {
-				const peer = new RTCPeerConnection({ iceServers });
+			if (member.socket_id === socketId || peers.has(member.socket_id)) continue;
 
-				peer.onconnectionstatechange = () => {
-					info(`Connection state "${member.socket_id}": `, peer.connectionState);
+			const peer = new RTCPeerConnection({ iceServers });
+
+			peer.onconnectionstatechange = () => {
+				info(`Connection state ${member.socket_id}:`, peer.connectionState);
+			};
+
+			peer.oniceconnectionstatechange = () => {
+				info(`ICE state ${member.socket_id}:`, peer.iceConnectionState);
+			};
+
+			peer.onsignalingstatechange = () => {
+				info(`Signaling state ${member.socket_id}:`, peer.signalingState);
+			};
+
+			peer.ontrack = (event) => {
+				info(`Received track from ${member.socket_id}: `, event);
+				const stream = event.streams[0] ?? new MediaStream([event.track]);
+
+				event.track.onmute = () => {
+					info(`Remote track MUTED from ${member.socket_id}`);
 				};
 
-				peer.oniceconnectionstatechange = () => {
-					info(`ICE state "${member.socket_id}": `, peer.iceConnectionState);
+				event.track.onunmute = () => {
+					info(`Remote track UNMUTED from ${member.socket_id}`);
 				};
 
-				peer.onsignalingstatechange = () => {
-					info(`Signaling state "${member.socket_id}": `, peer.signalingState);
+				event.track.onended = () => {
+					info(`Remote track ENDED from ${member.socket_id}`);
 				};
 
-				peer.ontrack = (event) => {
-					info(`Received track from "${member.socket_id}": `, event);
-					const stream = event.streams[0] ?? new MediaStream([event.track]);
+				streams.set(member.socket_id, stream);
 
-					event.track.onmute = () => {
-						info(`Remote track MUTED from "${member.socket_id}"`);
-					};
+				const source = audioContext.createMediaStreamSource(stream);
+				source.connect(audioContext.destination);
 
-					event.track.onunmute = () => {
-						info(`Remote track UNMUTED from "${member.socket_id}"`);
-					};
+				sources.set(member.socket_id, source);
+			};
 
-					event.track.onended = () => {
-						info(`Remote track ENDED from "${member.socket_id}"`);
-					};
+			peer.onicecandidate = async (event) => {
+				if (!event.candidate) return;
 
-					const source = audioContext.createMediaStreamSource(stream);
-					source.connect(audioContext.destination);
-
-					sources.set(member.socket_id, source);
-					streams.set(member.socket_id, stream);
+				const candidate: WebRTCEvent = {
+					type: "candidate",
+					candidate: event.candidate.candidate,
+					sdpMid: event.candidate.sdpMid,
+					sdpMLineIndex: event.candidate.sdpMLineIndex,
+					usernameFragment: event.candidate.usernameFragment
 				};
-				peer.onicecandidate = async (event) => {
-					if (!event.candidate) return;
+				info(`Sending ICE candidate to ${member.socket_id}: `, candidate);
 
-					const candidate: WebRTCEvent = {
-						type: "candidate",
-						candidate: event.candidate?.candidate,
-						sdpMid: event.candidate?.sdpMid,
-						sdpMLineIndex: event.candidate?.sdpMLineIndex,
-						usernameFragment: event.candidate?.usernameFragment
-					};
-					info(`Sending ICE candidate to "${member.socket_id}": `, candidate);
-					await client.sendWebRTCEvent(member.socket_id, candidate);
-				};
-				peer.onicecandidateerror = (event) => {
-					error(`ICE candidate error for "${member.socket_id}": `, event);
-				};
+				await client.sendWebRTCEvent(member.socket_id, candidate);
+			};
 
-				for (const track of stream.getTracks()) {
-					info(`Adding local track to peer for "${member.socket_id}": `, track);
-					peer.addTrack(track, stream);
-				}
+			peer.onicecandidateerror = (event) => {
+				error(`ICE candidate error for ${member.socket_id}: `, event);
+			};
 
-				peers.set(member.socket_id, peer);
-
-				if (socketId > member.socket_id) {
-					info(`Creating offer for "${member.socket_id}"`);
-					const offer = await peer.createOffer();
-
-					info(`Setting local description for "${member.socket_id}": `, offer);
-					await peer.setLocalDescription(offer);
-					info(`Sending offer to "${member.socket_id}": `, offer);
-					await client.sendWebRTCEvent(member.socket_id, offer);
+			if (localStream) {
+				for (const track of localStream.getTracks()) {
+					info(`Adding local track to peer for ${member.socket_id}: `, track);
+					peer.addTrack(track, localStream);
 				}
 			}
+
+			peers.set(member.socket_id, peer);
+
+			if (socketId > member.socket_id) {
+				info(`Creating offer for ${member.socket_id}`);
+				const offer = await peer.createOffer();
+
+				info(`Setting local description for ${member.socket_id}: `, offer);
+				await peer.setLocalDescription(offer);
+
+				info(`Sending offer to ${member.socket_id}: `, offer);
+				await client.sendWebRTCEvent(member.socket_id, offer);
+			}
 		}
-		for (const [socketId, peer] of peers) {
-			if (!members.find((member) => member.socket_id == socketId)) {
-				sources.get(socketId)?.disconnect();
-				sources.delete(socketId);
-				streams.delete(socketId);
-				peers.delete(socketId);
+
+		for (const [memberId, peer] of peers) {
+			if (!members.find((member) => member.socket_id === memberId)) {
 				peer.close();
+				sources.get(memberId)?.disconnect();
+				sources.delete(memberId);
+				peers.delete(memberId);
+				streams.delete(memberId);
 			}
 		}
 	}
 
 	onMount(async () => {
 		audioContext.onstatechange = onAudioStateChange;
-
 		client.onWebRTCEvent = onWebRTCEvent;
+
+		await getLocalStream();
+
 		client.onChannelMemberLeft = syncPeers;
 		client.onChannelMemberJoined = syncPeers;
 
-		await getLocalStream();
-		await syncPeers();
+		syncPeers();
 	});
 
 	onDestroy(() => {
@@ -183,9 +213,11 @@
 		client.onChannelMemberJoined = undefined;
 		client.onChannelMemberLeft = undefined;
 
-		for (const [socketId, peer] of peers) {
-			sources.get(socketId)?.disconnect();
+		for (const [_, peer] of peers) {
 			peer.close();
+		}
+		for (const [_, source] of sources) {
+			source.disconnect();
 		}
 
 		peers.clear();
@@ -205,6 +237,7 @@
 		<p class="text-white">Click to enable audio</p>
 	</div>
 {/if}
+
 <div class="flex h-full w-full flex-col bg-gray-900">
 	<div class="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
 		{#each members as member}
@@ -213,6 +246,10 @@
 					<span class="font-medium">{member.profile.name}</span>
 					<span class="text-xs text-gray-400">{member.socket_id}</span>
 				</div>
+				{#if member.socket_id !== client.id}
+					<audio autoplay playsinline muted use:audioSink={streams.get(member.socket_id)}
+					></audio>
+				{/if}
 			</div>
 		{/each}
 	</div>
