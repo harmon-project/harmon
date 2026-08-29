@@ -16,7 +16,7 @@
 		onEnd?: () => void;
 	}
 
-	let toasts = $state(new SvelteMap<number, Toast>());
+	let toasts = new SvelteMap<number, Toast>();
 	let counter = $state(0);
 
 	export function push(msg: string, options?: Options) {
