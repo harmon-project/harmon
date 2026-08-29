@@ -84,7 +84,7 @@
 		switch (event.type) {
 			case "offer": {
 				await peer.setRemoteDescription(event);
-				
+
 				for (const candidate of pendingIceCandidates.get(socketId) ?? []) {
 					await peer.addIceCandidate(candidate);
 				}
@@ -98,12 +98,12 @@
 			}
 			case "answer": {
 				await peer.setRemoteDescription(event);
-				
+
 				for (const candidate of pendingIceCandidates.get(socketId) ?? []) {
 					await peer.addIceCandidate(candidate);
 				}
 				pendingIceCandidates.delete(socketId);
-				
+
 				break;
 			}
 			case "candidate": {
