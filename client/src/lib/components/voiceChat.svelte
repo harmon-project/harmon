@@ -10,9 +10,10 @@
 
 	let localStream: MediaStream | undefined;
 	let audioContext = new AudioContext();
+	let peers = new SvelteMap<string, RTCPeerConnection>();
 	let streams = new SvelteMap<string, MediaStream>();
-	let peers = new Map<string, RTCPeerConnection>();
-	let sources = new Map<string, MediaStreamAudioSourceNode>();
+	let sources = new SvelteMap<string, MediaStreamAudioSourceNode>();
+	let pendingIceCandidates = new SvelteMap<string, RTCIceCandidateInit[]>();
 
 	let audioReady = $state(audioContext.state == "running");
 
@@ -83,6 +84,11 @@
 		switch (event.type) {
 			case "offer": {
 				await peer.setRemoteDescription(event);
+				
+				for (const candidate of pendingIceCandidates.get(socketId) ?? []) {
+					await peer.addIceCandidate(candidate);
+				}
+				pendingIceCandidates.delete(socketId);
 
 				const answer = await peer.createAnswer();
 
@@ -92,10 +98,21 @@
 			}
 			case "answer": {
 				await peer.setRemoteDescription(event);
+				
+				for (const candidate of pendingIceCandidates.get(socketId) ?? []) {
+					await peer.addIceCandidate(candidate);
+				}
+				pendingIceCandidates.delete(socketId);
+				
 				break;
 			}
 			case "candidate": {
-				await peer.addIceCandidate(event);
+				if (peer.remoteDescription) {
+					await peer.addIceCandidate(event);
+				} else {
+					const candidates = pendingIceCandidates.get(socketId) ?? [];
+					pendingIceCandidates.set(socketId, [...candidates, event]);
+				}
 				break;
 			}
 		}
@@ -190,6 +207,7 @@
 				sources.delete(memberId);
 				peers.delete(memberId);
 				streams.delete(memberId);
+				pendingIceCandidates.delete(memberId);
 			}
 		}
 	}
@@ -224,6 +242,7 @@
 		streams.clear();
 		sources.clear();
 		audioContext.close();
+		pendingIceCandidates.clear();
 	});
 </script>
 
