@@ -145,7 +145,7 @@
 
 				if (socketId > member.socket_id) {
 					info(`Creating offer for "${member.socket_id}"`);
-					const offer = await peer.createOffer({ offerToReceiveAudio: true });
+					const offer = await peer.createOffer();
 
 					info(`Setting local description for "${member.socket_id}": `, offer);
 					await peer.setLocalDescription(offer);
