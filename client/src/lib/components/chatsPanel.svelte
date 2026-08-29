@@ -18,6 +18,7 @@
 	const pubKey = uint8ArrayToZ32(auth?.publicKey!);
 
 	async function selectChannel(channel: Channel) {
+		if (client.currentChannel?.channel.id === channel.id) return;
 		await client.joinChannel(channel.id);
 	}
 </script>
