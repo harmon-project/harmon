@@ -1,7 +1,7 @@
 <script lang="ts">
-    import SvelteMarkdown from "@humanspeak/svelte-markdown";
+	import SvelteMarkdown from "@humanspeak/svelte-markdown";
 
-    const { content }: { content: string } = $props();
+	const { content }: { content: string } = $props();
 </script>
 
 <div class="prose prose-invert prose-a:text-blue-400">
