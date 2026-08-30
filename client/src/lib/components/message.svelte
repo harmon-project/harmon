@@ -5,6 +5,31 @@
 	import Markdown from "./markdown.svelte";
 
 	const { url, message }: { url: string; message: Message } = $props();
+
+	function formatDate(dateString: string): string {
+		const date = new Date(dateString);
+		const now = new Date();
+
+		const isToday =
+			date.getDate() === now.getDate() &&
+			date.getMonth() === now.getMonth() &&
+			date.getFullYear() === now.getFullYear();
+
+		if (isToday) {
+			return date.toLocaleTimeString("pt-BR", {
+				hour: "2-digit",
+				minute: "2-digit"
+			});
+		}
+
+		return date.toLocaleString("pt-BR", {
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit"
+		});
+	}
 </script>
 
 <div class="flex flex-row gap-1 p-2 hover:bg-gray-800">
@@ -12,7 +37,11 @@
 		{message.profile.name[0]}
 	</div>
 	<div class="shrink">
-		<p class="text-1xl text-gray-1 00 font-extrabold">{message.profile.name}</p>
+		<div class="flex gap-2">
+			<p class="text-1xl text-gray-1 00 font-extrabold">{message.profile.name}</p>
+
+			<p class="text-sm text-gray-400">{formatDate(message.created_at)}</p>
+		</div>
 		<Markdown content={message.content} />
 		<div class="flex flex-col items-start gap-4">
 			{#each message.attachments as attachment}
@@ -39,6 +68,7 @@
 					{:else if attachment.mime_type.startsWith("video")}
 						<video
 							controls
+							preload="metadata"
 							class="h-64 rounded-lg"
 							src={`${url}/files/${attachment.id}`}
 						>

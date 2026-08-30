@@ -230,6 +230,7 @@ export interface Message {
 	profile: Profile;
 	content: string;
 	attachments: MessageAttachment[];
+	created_at: string;
 }
 
 export interface MessageAttachment {

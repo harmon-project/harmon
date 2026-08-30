@@ -23,6 +23,8 @@ pub struct Message {
 	pub profile: profile::Profile,
 	pub content: String,
 	pub attachments: Vec<MessageAttachment>,
+	#[serde(with = "time::serde::rfc3339")]
+	pub created_at: time::OffsetDateTime,
 }
 
 #[derive(Debug, serde::Serialize)]
@@ -65,9 +67,10 @@ pub async fn send_message(app: wspc::App, socket: wspc::Socket, params: wspc::Pa
 	let message = Message {
 		id: message.id,
 		channel_id: message.channel_id,
-		profile: profile.into(),
 		content: message.content,
+		profile: profile.into(),
 		attachments: files.into_iter().map(Into::into).collect(),
+		created_at: message.created_at,
 	};
 
 	app.room(channel).emit("messageReceived", (message,))?;
@@ -95,9 +98,10 @@ pub async fn load_messages(app: wspc::App, socket: wspc::Socket, params: wspc::P
 		messages.push(Message {
 			id: message.id,
 			channel_id: message.channel_id,
-			profile: profile.into(),
 			content: message.content,
+			profile: profile.into(),
 			attachments: files.into_iter().map(Into::into).collect(),
+			created_at: message.created_at,
 		});
 	}
 
