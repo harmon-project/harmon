@@ -2,18 +2,18 @@
 	import { faDownload, faFile } from "@fortawesome/free-solid-svg-icons";
 	import type { Message } from "harmon-lib";
 	import Fa from "svelte-fa";
+	import Markdown from "./markdown.svelte";
 
 	const { url, message }: { url: string; message: Message } = $props();
 </script>
 
 <div class="flex flex-row gap-1 p-2 hover:bg-gray-800">
-	<!-- Duas colunas, uma para a foto apenas -->
 	<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500">
 		{message.profile.name[0]}
 	</div>
 	<div class="shrink">
 		<p class="text-1xl text-gray-1 00 font-extrabold">{message.profile.name}</p>
-		<p class="text-sm">{message.content}</p>
+		<Markdown content={message.content} />
 		<div class="flex flex-col items-start gap-4">
 			{#each message.attachments as attachment}
 				<div class="group relative mt-1 flex max-h-96">

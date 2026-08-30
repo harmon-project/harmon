@@ -16,3 +16,6 @@ vite.config.ts.timestamp-*
 
 # Pnpm
 pnpm-lock.yaml
+
+# Yarn
+yarn.lock

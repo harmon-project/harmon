@@ -1,3 +1,9 @@
 /node_modules
 /build
 .svelte-kit
+
+# Pnpm
+pnpm-lock.yaml
+
+# Yarn
+yarn.lock
