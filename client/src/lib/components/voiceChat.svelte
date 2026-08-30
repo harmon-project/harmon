@@ -118,6 +118,19 @@
 		}
 	}
 
+	async function createOffer(socketId: string) {
+		const peer = peers.get(socketId)!;
+
+		info(`Creating offer for ${socketId}`);
+		const offer = await peer.createOffer();
+
+		info(`Setting local description for ${socketId}: `, offer);
+		await peer.setLocalDescription(offer);
+
+		info(`Sending offer to ${socketId}: `, offer);
+		await client.sendWebRTCEvent(socketId, offer);
+	}
+
 	async function syncPeers() {
 		for (const member of members) {
 			if (member.socket_id === socketId || peers.has(member.socket_id)) continue;
@@ -160,6 +173,13 @@
 				sources.set(member.socket_id, source);
 			};
 
+			peer.onnegotiationneeded = async () => {
+				info(`Negotiation needed for ${member.socket_id}`);
+				if (socketId > member.socket_id && peer.signalingState == "stable") {
+					await createOffer(member.socket_id);
+				}
+			};
+
 			peer.onicecandidate = async (event) => {
 				if (!event.candidate) return;
 
@@ -187,17 +207,6 @@
 			}
 
 			peers.set(member.socket_id, peer);
-
-			if (socketId > member.socket_id) {
-				info(`Creating offer for ${member.socket_id}`);
-				const offer = await peer.createOffer();
-
-				info(`Setting local description for ${member.socket_id}: `, offer);
-				await peer.setLocalDescription(offer);
-
-				info(`Sending offer to ${member.socket_id}: `, offer);
-				await client.sendWebRTCEvent(member.socket_id, offer);
-			}
 		}
 
 		for (const [memberId, peer] of peers) {
@@ -214,14 +223,13 @@
 
 	onMount(async () => {
 		audioContext.onstatechange = onAudioStateChange;
+
 		client.onWebRTCEvent = onWebRTCEvent;
-
-		await getLocalStream();
-
 		client.onChannelMemberLeft = syncPeers;
 		client.onChannelMemberJoined = syncPeers;
 
-		syncPeers();
+		await syncPeers();
+		await getLocalStream();
 	});
 
 	onDestroy(() => {
