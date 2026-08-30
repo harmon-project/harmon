@@ -5,7 +5,7 @@ on:
     paths:
       - client/**
       - .github/workflows/client.yaml
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: write
@@ -20,36 +20,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: checkout
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 22
-    
-    - name: Setup Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
+      - name: checkout
+        uses: actions/checkout@v4
 
-    - name: Build dependencies
-      run: |
-        sudo apt update -y && \
-        sudo apt install -y \
-          libwebkit2gtk-4.1-dev \
-          build-essential \
-          curl \
-          wget \
-          file \
-          libssl-dev \
-          libgtk-3-dev \
-          openjdk-21-jdk-headless \
-          libayatana-appindicator3-dev \
-          librsvg2-dev
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
 
-    - name: Build
-      run: |
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Build dependencies
+        run: |
+          sudo apt update -y && \
+          sudo apt install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libgtk-3-dev \
+            openjdk-21-jdk-headless \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Build
+        run: |
           (
             cd lib && \
             npm ci && \
@@ -62,43 +62,43 @@ jobs:
             npm run tauri icon ./src/lib/assets/icon.png && \
             npm run tauri build
           )
-    
-    - name: Upload Pages artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        name: harmon-html
-        path: client/build
-        if-no-files-found: error
-    
-    - name: Upload AppImage artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: harmon-appimage
-        path: client/src-tauri/target/release/bundle/appimage/*.AppImage
-        if-no-files-found: error
 
-    - name: Upload Deb artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: harmon-deb
-        path: client/src-tauri/target/release/bundle/deb/*.deb
-        if-no-files-found: error
-    
-    - name: Upload Rpm artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: harmon-rpm
-        path: client/src-tauri/target/release/bundle/rpm/*.rpm
-        if-no-files-found: error
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: harmon-html
+          path: client/build
+          if-no-files-found: error
 
-    - name: Release nightly
-      uses: softprops/action-gh-release@v1
-      with:
-        prerelease: true
-        name: nightly
-        tag_name: nightly
-        files: client/src-tauri/target/release/bundle/appimage/*.AppImage, client/src-tauri/target/release/bundle/deb/*.deb, client/src-tauri/target/release/bundle/rpm/*.rpm
-        fail_on_unmatched_files: true
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: harmon-appimage
+          path: client/src-tauri/target/release/bundle/appimage/*.AppImage
+          if-no-files-found: error
+
+      - name: Upload Deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: harmon-deb
+          path: client/src-tauri/target/release/bundle/deb/*.deb
+          if-no-files-found: error
+
+      - name: Upload Rpm artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: harmon-rpm
+          path: client/src-tauri/target/release/bundle/rpm/*.rpm
+          if-no-files-found: error
+
+      - name: Release nightly
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          name: nightly
+          tag_name: nightly
+          files: client/src-tauri/target/release/bundle/appimage/*.AppImage, client/src-tauri/target/release/bundle/deb/*.deb, client/src-tauri/target/release/bundle/rpm/*.rpm
+          fail_on_unmatched_files: true
 
   deploy-pages:
     runs-on: ubuntu-latest
@@ -108,8 +108,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
-      with:
-        artifact_name: harmon-html
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: harmon-html
