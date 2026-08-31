@@ -7,7 +7,7 @@
 
 	const { client }: { client: Client } = $props();
 
-	let localStream: MediaStream | undefined;
+	let audioStream: MediaStream | undefined;
 	let audioContext = new AudioContext();
 	let peers = new SvelteMap<string, RTCPeerConnection>();
 	let streams = new SvelteMap<string, MediaStream>();
@@ -39,19 +39,19 @@
 		};
 	}
 
-	async function getLocalStream() {
+	async function getAudioStream() {
 		try {
-			localStream = await navigator.mediaDevices.getUserMedia({
+			audioStream = await navigator.mediaDevices.getUserMedia({
 				audio: { noiseSuppression: true, echoCancellation: true }
 			});
 
 			for (const [_, peer] of peers) {
-				for (const track of localStream.getTracks()) {
+				for (const track of audioStream.getTracks()) {
 					const hasSender = peer
 						.getSenders()
 						.some((sender) => sender.track?.id === track.id);
 					if (!hasSender) {
-						peer.addTrack(track, localStream);
+						peer.addTrack(track, audioStream);
 					}
 				}
 			}
@@ -198,10 +198,10 @@
 				error(`ICE candidate error for ${member.socket_id}: `, event);
 			};
 
-			if (localStream) {
-				for (const track of localStream.getTracks()) {
+			if (audioStream) {
+				for (const track of audioStream.getTracks()) {
 					info(`Adding local track to peer for ${member.socket_id}: `, track);
-					peer.addTrack(track, localStream);
+					peer.addTrack(track, audioStream);
 				}
 			}
 
@@ -228,7 +228,7 @@
 		client.onChannelMemberJoined = syncPeers;
 
 		await syncPeers();
-		await getLocalStream();
+		await getAudioStream();
 	});
 
 	onDestroy(() => {
