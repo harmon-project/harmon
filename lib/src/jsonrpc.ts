@@ -1,4 +1,4 @@
-import { WS } from "./websocke.js";
+import { WS } from "./websocket.js";
 
 type Version = "1.0" | "2.0";
 
