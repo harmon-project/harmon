@@ -2,8 +2,15 @@ use super::*;
 use crate::*;
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+pub struct IceServer {
+	pub urls: Vec<String>,
+	pub username: Option<String>,
+	pub credential: Option<String>,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
-pub enum WebRTCEvent {
+pub enum WebRtcEvent {
 	Offer {
 		sdp: String,
 	},
@@ -28,7 +35,7 @@ pub enum WebRTCEvent {
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct SendEventParams {
 	pub socket_id: uuid::Uuid,
-	pub event: WebRTCEvent,
+	pub event: WebRtcEvent,
 }
 
 pub async fn send_event(app: wspc::App, socket: wspc::Socket, params: wspc::Params<SendEventParams>) -> error::Result<()> {
@@ -48,7 +55,28 @@ pub async fn send_event(app: wspc::App, socket: wspc::Socket, params: wspc::Para
 		return Err(error::Error::Unauthorized);
 	}
 
-	app.room(params.socket_id).emit("webrtcEvent", (socket.id(), &params.event))?;
+	app.room(params.socket_id).emit("webRtcEvent", (socket.id(), &params.event))?;
 
 	Ok(())
+}
+
+pub async fn get_ice_servers(app: wspc::App, socket: wspc::Socket) -> error::Result<Vec<IceServer>> {
+	let state = app.get_state::<app::AppState>().unwrap();
+
+	if !auth::is_auth(&socket) {
+		return Err(error::Error::Unauthorized);
+	}
+
+	Ok(state.config.ice_servers.clone().into_iter().map(Into::into).collect())
+}
+
+impl From<config::IceServer> for IceServer {
+	#[inline(always)]
+	fn from(ice_server: config::IceServer) -> Self {
+		Self {
+			urls: ice_server.urls,
+			username: ice_server.username,
+			credential: ice_server.credential,
+		}
+	}
 }

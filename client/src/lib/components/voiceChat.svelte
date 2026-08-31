@@ -4,7 +4,6 @@
 	import { push } from "./toast.svelte";
 	import { SvelteMap } from "svelte/reactivity";
 	import { error, info } from "$lib/log";
-	import iceServers from "$lib/assets/iceServers.json";
 
 	const { client }: { client: Client } = $props();
 
@@ -93,7 +92,7 @@
 				const answer = await peer.createAnswer();
 
 				await peer.setLocalDescription(answer);
-				await client.sendWebRTCEvent(socketId, answer);
+				await client.sendWebRtcEvent(socketId, answer);
 				break;
 			}
 			case "answer": {
@@ -128,14 +127,14 @@
 		await peer.setLocalDescription(offer);
 
 		info(`Sending offer to ${socketId}: `, offer);
-		await client.sendWebRTCEvent(socketId, offer);
+		await client.sendWebRtcEvent(socketId, offer);
 	}
 
 	async function syncPeers() {
 		for (const member of members) {
 			if (member.socket_id === socketId || peers.has(member.socket_id)) continue;
 
-			const peer = new RTCPeerConnection({ iceServers });
+			const peer = new RTCPeerConnection({ iceServers: client.iceServers });
 
 			peer.onconnectionstatechange = () => {
 				info(`Connection state ${member.socket_id}:`, peer.connectionState);
@@ -192,7 +191,7 @@
 				};
 				info(`Sending ICE candidate to ${member.socket_id}: `, candidate);
 
-				await client.sendWebRTCEvent(member.socket_id, candidate);
+				await client.sendWebRtcEvent(member.socket_id, candidate);
 			};
 
 			peer.onicecandidateerror = (event) => {

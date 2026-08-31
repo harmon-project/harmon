@@ -10,6 +10,7 @@ type Session = {
 	currentChannel?: CurrentChannel;
 	channelList: Channel[];
 	profile?: Profile;
+	iceServers: RTCIceServer[];
 };
 
 type ConnectionData = {
@@ -83,7 +84,7 @@ export class Client {
 			this.onChannelMemberLeft?.(member);
 		});
 
-		this._rpc.on("webrtcEvent", (socketId, event) => {
+		this._rpc.on("webRtcEvent", (socketId, event) => {
 			this.onWebRTCEvent?.(socketId, event);
 		});
 	}
@@ -103,9 +104,10 @@ export class Client {
 	async auth(token: string) {
 		const payload = await this._rpc.call("auth", token);
 
-		let [profile, channelList] = await Promise.all([
+		let [profile, channelList, iceServers] = await Promise.all([
 			this.getProfile(payload.public_key),
-			this.listChannels()
+			this.listChannels(),
+			this.getIceServers()
 		]);
 
 		this._session = {
@@ -113,7 +115,8 @@ export class Client {
 			isAdmin: payload.is_admin,
 			authToken: token,
 			profile,
-			channelList
+			channelList,
+			iceServers
 		};
 
 		return payload;
@@ -152,28 +155,22 @@ export class Client {
 	}
 
 	async getProfile(public_key?: string) {
-		if (!this.isAuth && !public_key) {
-			throw new Error("Not authenticated and no public key provided");
-		}
 		return await this._rpc.call("getProfile", public_key);
 	}
 
 	async updateProfile(name: string) {
-		if (!this.isAuth) {
-			throw new Error("Not authenticated");
-		}
 		const profile = await this._rpc.call("updateProfile", name);
 		this._session!.profile = profile;
 
 		return profile;
 	}
 
-	async sendWebRTCEvent(socket_id: string, event: WebRTCEvent) {
-		if (!this.isAuth) {
-			throw new Error("Not authenticated");
-		}
+	async sendWebRtcEvent(socket_id: string, event: WebRTCEvent) {
+		await this._rpc.call("sendWebRtcEvent", socket_id, event);
+	}
 
-		await this._rpc.call("sendWebRTCEvent", socket_id, event);
+	async getIceServers() {
+		return await this._rpc.call("getIceServers");
 	}
 
 	get url() {
@@ -214,6 +211,10 @@ export class Client {
 
 	get id() {
 		return this._connectionData?.id;
+	}
+
+	get iceServers() {
+		return this._session?.iceServers ?? [];
 	}
 }
 
@@ -299,7 +300,7 @@ interface ServerToClientEvents {
 	onChannelMemberJoined: (member: ChannelMember) => void;
 	onChannelMemberLeft: (member: ChannelMember) => void;
 	channelDeleted(channel: Channel): void;
-	webrtcEvent(socket_id: string, event: WebRTCEvent): void;
+	webRtcEvent(socket_id: string, event: WebRTCEvent): void;
 }
 
 interface ClientToServerEvents {
@@ -318,5 +319,6 @@ interface ClientToServerEvents {
 	updateProfile(name: string): Profile;
 	getProfile(public_key?: string): Profile | undefined;
 
-	sendWebRTCEvent(socketId: string, event: WebRTCEvent): void;
+	sendWebRtcEvent(socketId: string, event: WebRTCEvent): void;
+	getIceServers(): RTCIceServer[];
 }

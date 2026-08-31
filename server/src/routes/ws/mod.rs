@@ -31,7 +31,9 @@ pub fn router(state: &app::AppState) -> MethodRouter<app::AppState> {
 
 	app.on("getProfile", profile::get_profile);
 	app.on("updateProfile", profile::update_profile);
-	app.on("sendWebRTCEvent", webrtc::send_event);
+
+	app.on("sendWebRtcEvent", webrtc::send_event);
+	app.on("getIceServers", webrtc::get_ice_servers);
 
 	route
 }
