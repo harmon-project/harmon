@@ -7,7 +7,8 @@
 
 	const { client }: { client: Client } = $props();
 
-	let audioStream: MediaStream | undefined;
+	let audioStream: MediaStream | undefined = $state();
+	let screenStream: MediaStream | undefined = $state();
 	let audioContext = new AudioContext();
 	let peers = new SvelteMap<string, RTCPeerConnection>();
 	let streams = new SvelteMap<string, MediaStream>();
@@ -19,7 +20,7 @@
 	const members = $derived(client.currentChannel?.members ?? []);
 	const socketId = $derived(client.id!);
 
-	function audioSink(node: HTMLAudioElement, stream?: MediaStream) {
+	function sink(node: HTMLAudioElement | HTMLVideoElement, stream?: MediaStream) {
 		const update = (next?: MediaStream) => {
 			if (node.srcObject != next) {
 				node.srcObject = next ?? null;
@@ -56,8 +57,31 @@
 				}
 			}
 		} catch (err) {
-			error("Failed to acquire local media stream: ", err);
-			push("Error acquiring local media stream.");
+			error("Failed to acquire audio media stream: ", err);
+			push("Error acquiring audio media stream.");
+		}
+	}
+
+	async function getScreenStream() {
+		try {
+			screenStream = await navigator.mediaDevices.getDisplayMedia({
+				video: true,
+				audio: false
+			});
+
+			for (const [_, peer] of peers) {
+				for (const track of screenStream.getTracks()) {
+					const hasSender = peer
+						.getSenders()
+						.some((sender) => sender.track?.id === track.id);
+					if (!hasSender) {
+						peer.addTrack(track, screenStream);
+					}
+				}
+			}
+		} catch (err) {
+			error("Failed to acquire screen media stream: ", err);
+			push("Error acquiring screen media stream.");
 		}
 	}
 
@@ -200,8 +224,15 @@
 
 			if (audioStream) {
 				for (const track of audioStream.getTracks()) {
-					info(`Adding local track to peer for ${member.socket_id}: `, track);
+					info(`Adding audio track to peer for ${member.socket_id}: `, track);
 					peer.addTrack(track, audioStream);
+				}
+			}
+
+			if (screenStream) {
+				for (const track of screenStream.getTracks()) {
+					info(`Adding screen track to peer for ${member.socket_id}: `, track);
+					peer.addTrack(track, screenStream);
 				}
 			}
 
@@ -272,9 +303,9 @@
 					<span class="font-medium">{member.profile.name}</span>
 					<span class="text-xs text-gray-400">{member.socket_id}</span>
 				</div>
+				{const stream = streams.get(member.socket_id)}
 				{#if member.socket_id !== client.id}
-					<audio autoplay playsinline muted use:audioSink={streams.get(member.socket_id)}
-					></audio>
+					<audio autoplay playsinline muted use:sink={stream}></audio>
 				{/if}
 			</div>
 		{/each}
