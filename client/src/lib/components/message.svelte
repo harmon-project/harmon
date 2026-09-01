@@ -39,7 +39,6 @@
 	<div class="shrink">
 		<div class="flex gap-2">
 			<p class="text-1xl text-gray-1 00 font-extrabold">{message.profile.name}</p>
-
 			<p class="text-sm text-gray-400">{formatDate(message.created_at)}</p>
 		</div>
 		<Markdown content={message.content} />

@@ -32,6 +32,11 @@
 		if (client.currentChannel?.channel.id === channel.id) return;
 		await client.joinChannel(channel.id);
 	}
+
+	$effect(() => {
+		let _ = client.currentChannel;
+		isScreenSharing = false;
+	});
 </script>
 
 <aside class="flex w-60 flex-col border-r">
