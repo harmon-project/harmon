@@ -170,9 +170,16 @@
 					pendingIceCandidates.delete(remoteId);
 
 					if (event.type === "offer") {
-						const answer = await peer.createAnswer();
-						await peer.setLocalDescription(answer);
-						await client.sendWebRtcEvent(remoteId, answer);
+						// Argument-less setLocalDescription() creates and applies
+						// the answer in a single step, so the signaling state can't
+						// change between building and setting it.
+						await peer.setLocalDescription();
+						if (peer.localDescription) {
+							await client.sendWebRtcEvent(remoteId, {
+								type: peer.localDescription.type,
+								sdp: peer.localDescription.sdp
+							});
+						}
 					}
 					break;
 				}
@@ -271,9 +278,17 @@
 				info(`Negotiation needed for ${member.socket_id}`);
 				try {
 					makingOffer.set(member.socket_id, true);
-					const offer = await peer.createOffer();
-					await peer.setLocalDescription(offer);
-					await client.sendWebRtcEvent(member.socket_id, offer);
+					// Argument-less setLocalDescription() atomically creates the
+					// offer for the current signaling state and applies it. The
+					// browser drives the negotiation order; we never build an SDP
+					// by hand across an await, which is what breaks glare handling.
+					await peer.setLocalDescription();
+					if (peer.localDescription) {
+						await client.sendWebRtcEvent(member.socket_id, {
+							type: peer.localDescription.type,
+							sdp: peer.localDescription.sdp
+						});
+					}
 				} catch (err) {
 					error(`Negotiation failed for ${member.socket_id}: `, err);
 				} finally {
