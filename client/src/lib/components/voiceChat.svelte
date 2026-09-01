@@ -68,29 +68,6 @@
 		}
 	}
 
-	async function getScreenStream() {
-		try {
-			screenStream = await navigator.mediaDevices.getDisplayMedia({
-				video: true,
-				audio: false
-			});
-
-			for (const [_, peer] of peers) {
-				for (const track of screenStream.getTracks()) {
-					const hasSender = peer.connection
-						.getSenders()
-						.some((sender) => sender.track?.id === track.id);
-					if (!hasSender) {
-						peer.connection.addTrack(track, screenStream);
-					}
-				}
-			}
-		} catch (err) {
-			error("Failed to acquire screen media stream: ", err);
-			push("Error acquiring screen media stream.");
-		}
-	}
-
 	async function resumeAudio() {
 		try {
 			await audioContext.resume();
@@ -153,6 +130,7 @@
 				if (peer.ignoreOffer) {
 					break;
 				}
+
 				if (peer.connection.remoteDescription) {
 					await peer.connection.addIceCandidate(event);
 				} else {
@@ -288,6 +266,56 @@
 		}
 	}
 
+	export async function startScreenShare() {
+		try {
+			screenStream = await navigator.mediaDevices.getDisplayMedia({
+				video: true,
+				audio: false
+			});
+
+			for (const [_, peer] of peers) {
+				for (const track of screenStream.getTracks()) {
+					const hasSender = peer.connection
+						.getSenders()
+						.some((sender) => sender.track?.id === track.id);
+					if (!hasSender) {
+						peer.connection.addTrack(track, screenStream);
+					}
+				}
+			}
+		} catch (err) {
+			error("Failed to acquire screen media stream: ", err);
+			push("Error acquiring screen media stream.");
+		} finally {
+			return !!screenStream;
+		}
+	}
+
+	export async function stopScreenShare() {
+		try {
+			for (const [_, peer] of peers) {
+				for (const sender of peer.connection.getSenders()) {
+					if (sender.track && sender.track.kind === "video") {
+						sender.replaceTrack(null);
+					}
+				}
+			}
+
+			if (screenStream) {
+				for (const track of screenStream.getTracks()) {
+					track.stop();
+				}
+
+				screenStream = undefined;
+			}
+		} catch (err) {
+			error("Failed to stop screen media stream: ", err);
+			push("Error stopping screen media stream.");
+		} finally {
+			return !!screenStream;
+		}
+	}
+
 	onMount(async () => {
 		audioContext.onstatechange = onAudioStateChange;
 
@@ -328,17 +356,47 @@
 	</div>
 {/if}
 
+{#snippet profile(name: string)}
+	<div class="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl text-center">
+		<div
+			class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-500 text-lg font-semibold"
+		>
+			{name[0]}
+		</div>
+		<span class="text-sm font-semibold text-gray-100">{name}</span>
+	</div>
+{/snippet}
+
+{#snippet video(stream: MediaStream)}
+	<video
+		class="min-h-0 w-full flex-1 bg-black"
+		autoplay
+		playsinline
+		muted
+		use:sink={stream}
+	></video>
+{/snippet}
+
 <div class="flex h-full w-full flex-col bg-gray-900">
-	<div class="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+	<div
+		class="grid min-h-0 flex-1 gap-3 overflow-x-hidden overflow-y-auto p-4 auto-rows-[minmax(14rem,1fr)] grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] "
+	>
 		{#each members as member}
-			<div class="rounded-md border border-gray-700 bg-gray-800 p-3">
-				<div class="mb-2 flex items-center justify-between gap-2">
-					<span class="font-medium">{member.profile.name}</span>
-					<span class="text-xs text-gray-400">{member.socket_id}</span>
-				</div>
-				{const stream = streams.get(member.socket_id)}
-				{#if member.socket_id !== client.id}
-					<audio autoplay playsinline muted use:sink={stream}></audio>
+			{@const stream = streams.get(member.socket_id)}
+			<div class="flex min-h-0 w-full flex-col overflow-hidden rounded-2xl bg-gray-800">
+				{#if member.socket_id === client.id}
+					{#if screenStream}
+						{@render video(screenStream)}
+					{:else}
+						{@render profile(member.profile.name)}
+					{/if}
+				{:else}
+					{#if !!stream && stream.getVideoTracks().length > 0}
+						{@render video(stream)}
+					{:else}
+						{@render profile(member.profile.name)}
+					{/if}
+					<audio class="hidden" autoplay playsinline muted use:sink={stream}></audio>
 				{/if}
 			</div>
 		{/each}

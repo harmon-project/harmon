@@ -5,17 +5,28 @@
 	import { faHashtag, faVolume } from "@fortawesome/free-solid-svg-icons";
 	import { uint8ArrayToZ32 } from "harmon-lib/utils";
 	import Fa from "svelte-fa";
+	import { faChromecast } from "@fortawesome/free-brands-svg-icons";
 
 	const {
 		client,
-		onClickProfile
+		onClickProfile,
+		onStartScreenShare,
+		onStopScreenShare
 	}: {
 		client: Client;
 		onClickProfile: () => void;
+		onStartScreenShare: () => Promise<boolean>;
+		onStopScreenShare: () => Promise<boolean>;
 	} = $props();
 
 	const auth = useAuth();
 	const pubKey = uint8ArrayToZ32(auth?.publicKey!);
+
+	let isScreenSharing = $state(false);
+
+	async function onScreenShareClick() {
+		isScreenSharing = isScreenSharing ? await onStopScreenShare() : await onStartScreenShare();
+	}
 
 	async function selectChannel(channel: Channel) {
 		if (client.currentChannel?.channel.id === channel.id) return;
@@ -48,18 +59,32 @@
 		{/each}
 	</div>
 	<hr />
-	<div class="flex h-20 flex-col justify-center p-4">
-		<button class="cursor-pointer truncate" onclick={onClickProfile}>
-			<p class="text-lg">{client.profile?.name}</p>
-		</button>
-		<button
-			class="cursor-pointer truncate"
-			onclick={() => {
-				navigator.clipboard.writeText(pubKey);
-				push("PublicKey copied to clipboard");
-			}}
-		>
-			<p class="text-xs">{pubKey}</p>
-		</button>
+	<div class="flex h-20 w-full flex-row items-center justify-center gap-1 p-2">
+		<div class="flex w-full flex-col overflow-hidden">
+			<button class="cursor-pointer truncate" onclick={onClickProfile}>
+				<p class="text-lg">{client.profile?.name}</p>
+			</button>
+			<button
+				class="cursor-pointer truncate"
+				onclick={() => {
+					navigator.clipboard.writeText(pubKey);
+					push("PublicKey copied to clipboard");
+				}}
+			>
+				<p class="truncate text-xs">{pubKey}</p>
+			</button>
+		</div>
+		{#if client.currentChannel?.channel.type == "Voice"}
+			<button
+				class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md hover:bg-gray-700"
+				onclick={onScreenShareClick}
+			>
+				{#if isScreenSharing}
+					<Fa icon={faChromecast} class="text-blue-500"></Fa>
+				{:else}
+					<Fa icon={faChromecast}></Fa>
+				{/if}
+			</button>
+		{/if}
 	</div>
 </aside>

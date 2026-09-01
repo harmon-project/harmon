@@ -20,6 +20,7 @@
 	const currentServer = useStorage<string | undefined>("currentServer", undefined);
 
 	let client: Client | undefined = $state();
+	let voiceChat: VoiceChat | undefined = $state();
 
 	let showAddServerModal = $state(false);
 	let isEditingProfile = $state(false);
@@ -118,6 +119,8 @@
 			/>
 			<ChatsPanel
 				{client}
+				onStartScreenShare={async () => (await voiceChat?.startScreenShare()) ?? false}
+				onStopScreenShare={async () => (await voiceChat?.stopScreenShare()) ?? false}
 				onClickProfile={() => {
 					isEditingProfile = true;
 				}}
@@ -127,7 +130,7 @@
 					{#if client.currentChannel.channel.type == "Text"}
 						<Chat {client} />
 					{:else if client.currentChannel.channel.type == "Voice"}
-						<VoiceChat {client} />
+						<VoiceChat bind:this={voiceChat} {client} />
 					{/if}
 				{/key}
 			{/if}
