@@ -368,18 +368,13 @@
 {/snippet}
 
 {#snippet video(stream: MediaStream)}
-	<video
-		class="min-h-0 w-full flex-1 bg-black"
-		autoplay
-		playsinline
-		muted
-		use:sink={stream}
+	<video class="min-h-0 w-full flex-1 bg-black" autoplay playsinline muted use:sink={stream}
 	></video>
 {/snippet}
 
 <div class="flex h-full w-full flex-col bg-gray-900">
 	<div
-		class="grid min-h-0 flex-1 gap-3 overflow-x-hidden overflow-y-auto p-4 auto-rows-[minmax(14rem,1fr)] grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] "
+		class="grid min-h-0 flex-1 auto-rows-[minmax(14rem,1fr)] grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-3 overflow-x-hidden overflow-y-auto p-4"
 	>
 		{#each members as member}
 			{@const stream = streams.get(member.socket_id)}
