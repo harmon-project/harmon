@@ -4,6 +4,8 @@
 	import { push } from "./toast.svelte";
 	import { SvelteMap } from "svelte/reactivity";
 	import { error, info } from "$lib/log";
+	import Fa from "svelte-fa";
+	import { faDesktop, faStop } from "@fortawesome/free-solid-svg-icons";
 
 	const { client }: { client: Client } = $props();
 
@@ -12,8 +14,14 @@
 	let audioContext = new AudioContext();
 	let peers = new SvelteMap<string, RTCPeerConnection>();
 	let streams = new SvelteMap<string, MediaStream>();
+	let screenStreams = new SvelteMap<string, MediaStream>();
 	let sources = new SvelteMap<string, MediaStreamAudioSourceNode>();
 	let pendingIceCandidates = new SvelteMap<string, RTCIceCandidateInit[]>();
+
+	// Per-peer state for "perfect negotiation". Both flags are keyed by the
+	// remote socket id so the shared `onWebRTCEvent` handler can read them.
+	let makingOffer = new Map<string, boolean>();
+	let ignoreOffer = new Map<string, boolean>();
 
 	let audioReady = $state(audioContext.state == "running");
 
@@ -69,6 +77,12 @@
 				audio: false
 			});
 
+			// Stop sharing when the user ends it through the browser's own
+			// "Stop sharing" control instead of our button.
+			for (const track of screenStream.getTracks()) {
+				track.onended = () => stopScreenStream();
+			}
+
 			for (const [_, peer] of peers) {
 				for (const track of screenStream.getTracks()) {
 					const hasSender = peer
@@ -85,6 +99,35 @@
 		}
 	}
 
+	function stopScreenStream() {
+		if (!screenStream) return;
+
+		const tracks = screenStream.getTracks();
+
+		for (const [_, peer] of peers) {
+			for (const sender of peer.getSenders()) {
+				if (sender.track && tracks.includes(sender.track)) {
+					peer.removeTrack(sender);
+				}
+			}
+		}
+
+		for (const track of tracks) {
+			track.onended = null;
+			track.stop();
+		}
+
+		screenStream = undefined;
+	}
+
+	async function toggleScreenStream() {
+		if (screenStream) {
+			stopScreenStream();
+		} else {
+			await getScreenStream();
+		}
+	}
+
 	async function resumeAudio() {
 		try {
 			await audioContext.resume();
@@ -97,61 +140,59 @@
 		audioReady = audioContext.state == "running";
 	}
 
-	async function onWebRTCEvent(socketId: string, event: WebRTCEvent) {
-		const peer = peers.get(socketId);
+	async function onWebRTCEvent(remoteId: string, event: WebRTCEvent) {
+		const peer = peers.get(remoteId);
 
 		if (!peer) return;
 
-		info(`Received WebRTC event from "${socketId}": `, event);
+		info(`Received WebRTC event from "${remoteId}": `, event);
 
-		switch (event.type) {
-			case "offer": {
-				await peer.setRemoteDescription(event);
+		// The peer with the lower socket id is "polite": on a negotiation
+		// collision it yields, letting the other side's offer win.
+		const polite = socketId < remoteId;
 
-				for (const candidate of pendingIceCandidates.get(socketId) ?? []) {
-					await peer.addIceCandidate(candidate);
+		try {
+			switch (event.type) {
+				case "offer":
+				case "answer": {
+					const collision =
+						event.type === "offer" &&
+						(makingOffer.get(remoteId) || peer.signalingState !== "stable");
+
+					ignoreOffer.set(remoteId, !polite && collision);
+					if (ignoreOffer.get(remoteId)) return;
+
+					await peer.setRemoteDescription(event);
+
+					for (const candidate of pendingIceCandidates.get(remoteId) ?? []) {
+						await peer.addIceCandidate(candidate);
+					}
+					pendingIceCandidates.delete(remoteId);
+
+					if (event.type === "offer") {
+						const answer = await peer.createAnswer();
+						await peer.setLocalDescription(answer);
+						await client.sendWebRtcEvent(remoteId, answer);
+					}
+					break;
 				}
-				pendingIceCandidates.delete(socketId);
-
-				const answer = await peer.createAnswer();
-
-				await peer.setLocalDescription(answer);
-				await client.sendWebRtcEvent(socketId, answer);
-				break;
-			}
-			case "answer": {
-				await peer.setRemoteDescription(event);
-
-				for (const candidate of pendingIceCandidates.get(socketId) ?? []) {
-					await peer.addIceCandidate(candidate);
+				case "candidate": {
+					if (peer.remoteDescription) {
+						try {
+							await peer.addIceCandidate(event);
+						} catch (err) {
+							if (!ignoreOffer.get(remoteId)) throw err;
+						}
+					} else {
+						const candidates = pendingIceCandidates.get(remoteId) ?? [];
+						pendingIceCandidates.set(remoteId, [...candidates, event]);
+					}
+					break;
 				}
-				pendingIceCandidates.delete(socketId);
-
-				break;
 			}
-			case "candidate": {
-				if (peer.remoteDescription) {
-					await peer.addIceCandidate(event);
-				} else {
-					const candidates = pendingIceCandidates.get(socketId) ?? [];
-					pendingIceCandidates.set(socketId, [...candidates, event]);
-				}
-				break;
-			}
+		} catch (err) {
+			error(`Failed to handle WebRTC event from ${remoteId}: `, err);
 		}
-	}
-
-	async function createOffer(socketId: string) {
-		const peer = peers.get(socketId)!;
-
-		info(`Creating offer for ${socketId}`);
-		const offer = await peer.createOffer();
-
-		info(`Setting local description for ${socketId}: `, offer);
-		await peer.setLocalDescription(offer);
-
-		info(`Sending offer to ${socketId}: `, offer);
-		await client.sendWebRtcEvent(socketId, offer);
 	}
 
 	async function syncPeers() {
@@ -176,6 +217,35 @@
 				info(`Received track from ${member.socket_id}: `, event);
 				const stream = event.streams[0] ?? new MediaStream([event.track]);
 
+				if (event.track.kind === "video") {
+					// A video track is a screen share; render it instead of
+					// routing it through the audio graph.
+					screenStreams.set(member.socket_id, stream);
+
+					event.track.onmute = () => {
+						info(`Remote screen track MUTED from ${member.socket_id}`);
+						screenStreams.delete(member.socket_id);
+					};
+
+					event.track.onunmute = () => {
+						info(`Remote screen track UNMUTED from ${member.socket_id}`);
+						screenStreams.set(member.socket_id, stream);
+					};
+
+					event.track.onended = () => {
+						info(`Remote screen track ENDED from ${member.socket_id}`);
+						screenStreams.delete(member.socket_id);
+					};
+
+					stream.onremovetrack = () => {
+						if (stream.getVideoTracks().length === 0) {
+							screenStreams.delete(member.socket_id);
+						}
+					};
+
+					return;
+				}
+
 				event.track.onmute = () => {
 					info(`Remote track MUTED from ${member.socket_id}`);
 				};
@@ -190,6 +260,7 @@
 
 				streams.set(member.socket_id, stream);
 
+				sources.get(member.socket_id)?.disconnect();
 				const source = audioContext.createMediaStreamSource(stream);
 				source.connect(audioContext.destination);
 
@@ -198,8 +269,15 @@
 
 			peer.onnegotiationneeded = async () => {
 				info(`Negotiation needed for ${member.socket_id}`);
-				if (socketId > member.socket_id && peer.signalingState == "stable") {
-					await createOffer(member.socket_id);
+				try {
+					makingOffer.set(member.socket_id, true);
+					const offer = await peer.createOffer();
+					await peer.setLocalDescription(offer);
+					await client.sendWebRtcEvent(member.socket_id, offer);
+				} catch (err) {
+					error(`Negotiation failed for ${member.socket_id}: `, err);
+				} finally {
+					makingOffer.set(member.socket_id, false);
 				}
 			};
 
@@ -246,7 +324,10 @@
 				sources.delete(memberId);
 				peers.delete(memberId);
 				streams.delete(memberId);
+				screenStreams.delete(memberId);
 				pendingIceCandidates.delete(memberId);
+				makingOffer.delete(memberId);
+				ignoreOffer.delete(memberId);
 			}
 		}
 	}
@@ -275,12 +356,22 @@
 		for (const [_, source] of sources) {
 			source.disconnect();
 		}
+		for (const track of audioStream?.getTracks() ?? []) {
+			track.stop();
+		}
+		for (const track of screenStream?.getTracks() ?? []) {
+			track.onended = null;
+			track.stop();
+		}
 
 		peers.clear();
 		streams.clear();
+		screenStreams.clear();
 		sources.clear();
 		audioContext.close();
 		pendingIceCandidates.clear();
+		makingOffer.clear();
+		ignoreOffer.clear();
 	});
 </script>
 
@@ -297,17 +388,75 @@
 
 <div class="flex h-full w-full flex-col bg-gray-900">
 	<div class="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+		{#if screenStream || screenStreams.size > 0}
+			<div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+				{#if screenStream}
+					<div
+						class="relative overflow-hidden rounded-md border border-gray-700 bg-black"
+					>
+						<!-- svelte-ignore a11y_media_has_caption -->
+						<video
+							autoplay
+							playsinline
+							muted
+							use:sink={screenStream}
+							class="h-full w-full object-contain"
+						></video>
+						<span
+							class="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white"
+						>
+							You
+						</span>
+					</div>
+				{/if}
+				{#each members as member}
+					{@const screen = screenStreams.get(member.socket_id)}
+					{#if member.socket_id !== client.id && screen}
+						<div
+							class="relative overflow-hidden rounded-md border border-gray-700 bg-black"
+						>
+							<!-- svelte-ignore a11y_media_has_caption -->
+							<video
+								autoplay
+								playsinline
+								muted
+								use:sink={screen}
+								class="h-full w-full object-contain"
+							></video>
+							<span
+								class="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white"
+							>
+								{member.profile.name}
+							</span>
+						</div>
+					{/if}
+				{/each}
+			</div>
+		{/if}
+
 		{#each members as member}
+			{@const stream = streams.get(member.socket_id)}
 			<div class="rounded-md border border-gray-700 bg-gray-800 p-3">
 				<div class="mb-2 flex items-center justify-between gap-2">
 					<span class="font-medium">{member.profile.name}</span>
 					<span class="text-xs text-gray-400">{member.socket_id}</span>
 				</div>
-				{const stream = streams.get(member.socket_id)}
 				{#if member.socket_id !== client.id}
 					<audio autoplay playsinline muted use:sink={stream}></audio>
 				{/if}
 			</div>
 		{/each}
+	</div>
+
+	<div class="flex items-center justify-center gap-3 border-t border-gray-700 bg-gray-800 p-3">
+		<button
+			onclick={toggleScreenStream}
+			class="flex cursor-pointer items-center gap-2 rounded-md px-4 py-2 text-white {screenStream
+				? 'bg-red-600 hover:bg-red-700'
+				: 'bg-gray-700 hover:bg-gray-600'}"
+		>
+			<Fa icon={screenStream ? faStop : faDesktop} />
+			{screenStream ? "Stop sharing" : "Share screen"}
+		</button>
 	</div>
 </div>
