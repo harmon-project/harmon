@@ -7,18 +7,24 @@
 
 	const { client }: { client: Client } = $props();
 
+	interface Peer {
+		connection: RTCPeerConnection;
+		source: MediaStreamAudioSourceNode | undefined;
+		pendingIceCandidates: RTCIceCandidateInit[];
+		makingOffer: boolean;
+		ignoreOffer: boolean;
+	}
+
 	let audioStream: MediaStream | undefined = $state();
 	let screenStream: MediaStream | undefined = $state();
 	let audioContext = new AudioContext();
-	let peers = new SvelteMap<string, RTCPeerConnection>();
+	let peers = new SvelteMap<string, Peer>();
 	let streams = new SvelteMap<string, MediaStream>();
-	let sources = new SvelteMap<string, MediaStreamAudioSourceNode>();
-	let pendingIceCandidates = new SvelteMap<string, RTCIceCandidateInit[]>();
 
 	let audioReady = $state(audioContext.state == "running");
 
 	const members = $derived(client.currentChannel?.members ?? []);
-	const socketId = $derived(client.id!);
+	const localSocketId = $derived(client.id!);
 
 	function sink(node: HTMLAudioElement | HTMLVideoElement, stream?: MediaStream) {
 		const update = (next?: MediaStream) => {
@@ -48,11 +54,11 @@
 
 			for (const [_, peer] of peers) {
 				for (const track of audioStream.getTracks()) {
-					const hasSender = peer
+					const hasSender = peer.connection
 						.getSenders()
 						.some((sender) => sender.track?.id === track.id);
 					if (!hasSender) {
-						peer.addTrack(track, audioStream);
+						peer.connection.addTrack(track, audioStream);
 					}
 				}
 			}
@@ -71,11 +77,11 @@
 
 			for (const [_, peer] of peers) {
 				for (const track of screenStream.getTracks()) {
-					const hasSender = peer
+					const hasSender = peer.connection
 						.getSenders()
 						.some((sender) => sender.track?.id === track.id);
 					if (!hasSender) {
-						peer.addTrack(track, screenStream);
+						peer.connection.addTrack(track, screenStream);
 					}
 				}
 			}
@@ -97,82 +103,114 @@
 		audioReady = audioContext.state == "running";
 	}
 
-	async function onWebRTCEvent(socketId: string, event: WebRTCEvent) {
-		const peer = peers.get(socketId);
+	async function onWebRTCEvent(peerId: string, event: WebRTCEvent) {
+		const peer = peers.get(peerId);
 
 		if (!peer) return;
 
-		info(`Received WebRTC event from "${socketId}": `, event);
+		const polite = localSocketId > peerId;
+		info(`Received WebRTC event from "${peerId}": `, event);
 
 		switch (event.type) {
 			case "offer": {
-				await peer.setRemoteDescription(event);
+				const readyForOffer =
+					!peer.makingOffer && peer.connection.signalingState === "stable";
+				const offerCollision = !readyForOffer;
 
-				for (const candidate of pendingIceCandidates.get(socketId) ?? []) {
-					await peer.addIceCandidate(candidate);
+				if (offerCollision && !polite) {
+					peer.ignoreOffer = true;
+					return;
 				}
-				pendingIceCandidates.delete(socketId);
 
-				const answer = await peer.createAnswer();
+				peer.ignoreOffer = false;
 
-				await peer.setLocalDescription(answer);
-				await client.sendWebRtcEvent(socketId, answer);
+				await peer.connection.setRemoteDescription(event);
+
+				for (const candidate of peer.pendingIceCandidates) {
+					await peer.connection.addIceCandidate(candidate);
+				}
+				peer.pendingIceCandidates = [];
+
+				const answer = await peer.connection.createAnswer();
+
+				await peer.connection.setLocalDescription(answer);
+				await client.sendWebRtcEvent(peerId, answer);
+
 				break;
 			}
 			case "answer": {
-				await peer.setRemoteDescription(event);
+				await peer.connection.setRemoteDescription(event);
 
-				for (const candidate of pendingIceCandidates.get(socketId) ?? []) {
-					await peer.addIceCandidate(candidate);
+				for (const candidate of peer.pendingIceCandidates) {
+					await peer.connection.addIceCandidate(candidate);
 				}
-				pendingIceCandidates.delete(socketId);
+
+				peer.pendingIceCandidates = [];
 
 				break;
 			}
 			case "candidate": {
-				if (peer.remoteDescription) {
-					await peer.addIceCandidate(event);
-				} else {
-					const candidates = pendingIceCandidates.get(socketId) ?? [];
-					pendingIceCandidates.set(socketId, [...candidates, event]);
+				if (peer.ignoreOffer) {
+					break;
 				}
+				if (peer.connection.remoteDescription) {
+					await peer.connection.addIceCandidate(event);
+				} else {
+					peer.pendingIceCandidates = [...peer.pendingIceCandidates, event];
+				}
+
 				break;
 			}
 		}
 	}
 
-	async function createOffer(socketId: string) {
-		const peer = peers.get(socketId)!;
+	async function createOffer(peerId: string) {
+		const peer = peers.get(peerId)!;
 
-		info(`Creating offer for ${socketId}`);
-		const offer = await peer.createOffer();
+		if (peer.makingOffer || peer.connection.signalingState !== "stable") return;
 
-		info(`Setting local description for ${socketId}: `, offer);
-		await peer.setLocalDescription(offer);
+		peer.makingOffer = true;
 
-		info(`Sending offer to ${socketId}: `, offer);
-		await client.sendWebRtcEvent(socketId, offer);
+		try {
+			info(`Creating offer for ${peerId}`);
+			const offer = await peer.connection.createOffer();
+
+			info(`Setting local description for ${peerId}: `, offer);
+			await peer.connection.setLocalDescription(offer);
+
+			info(`Sending offer to ${peerId}: `, offer);
+			await client.sendWebRtcEvent(peerId, offer);
+		} finally {
+			peer.makingOffer = false;
+		}
 	}
 
 	async function syncPeers() {
 		for (const member of members) {
-			if (member.socket_id === socketId || peers.has(member.socket_id)) continue;
+			if (member.socket_id === localSocketId || peers.has(member.socket_id)) continue;
 
-			const peer = new RTCPeerConnection({ iceServers: client.iceServers });
-
-			peer.onconnectionstatechange = () => {
-				info(`Connection state ${member.socket_id}:`, peer.connectionState);
+			const connection = new RTCPeerConnection({ iceServers: client.iceServers });
+			const peer: Peer = {
+				connection,
+				source: undefined,
+				pendingIceCandidates: [],
+				makingOffer: false,
+				ignoreOffer: false
 			};
 
-			peer.oniceconnectionstatechange = () => {
-				info(`ICE state ${member.socket_id}:`, peer.iceConnectionState);
+			connection.onconnectionstatechange = () => {
+				info(`Connection state ${member.socket_id}:`, connection.connectionState);
 			};
 
-			peer.onsignalingstatechange = () => {
-				info(`Signaling state ${member.socket_id}:`, peer.signalingState);
+			connection.oniceconnectionstatechange = () => {
+				info(`ICE state ${member.socket_id}:`, connection.iceConnectionState);
 			};
 
-			peer.ontrack = (event) => {
+			connection.onsignalingstatechange = () => {
+				info(`Signaling state ${member.socket_id}:`, connection.signalingState);
+			};
+
+			connection.ontrack = (event) => {
 				info(`Received track from ${member.socket_id}: `, event);
 				const stream = event.streams[0] ?? new MediaStream([event.track]);
 
@@ -193,17 +231,18 @@
 				const source = audioContext.createMediaStreamSource(stream);
 				source.connect(audioContext.destination);
 
-				sources.set(member.socket_id, source);
+				peer.source = source;
 			};
 
-			peer.onnegotiationneeded = async () => {
+			connection.onnegotiationneeded = async () => {
 				info(`Negotiation needed for ${member.socket_id}`);
-				if (socketId > member.socket_id && peer.signalingState == "stable") {
-					await createOffer(member.socket_id);
+				if (connection.signalingState !== "stable" || peer.makingOffer) {
+					return;
 				}
+				await createOffer(member.socket_id);
 			};
 
-			peer.onicecandidate = async (event) => {
+			connection.onicecandidate = async (event) => {
 				if (!event.candidate) return;
 
 				const candidate: WebRTCEvent = {
@@ -218,21 +257,21 @@
 				await client.sendWebRtcEvent(member.socket_id, candidate);
 			};
 
-			peer.onicecandidateerror = (event) => {
+			connection.onicecandidateerror = (event) => {
 				error(`ICE candidate error for ${member.socket_id}: `, event);
 			};
 
 			if (audioStream) {
 				for (const track of audioStream.getTracks()) {
 					info(`Adding audio track to peer for ${member.socket_id}: `, track);
-					peer.addTrack(track, audioStream);
+					connection.addTrack(track, audioStream);
 				}
 			}
 
 			if (screenStream) {
 				for (const track of screenStream.getTracks()) {
 					info(`Adding screen track to peer for ${member.socket_id}: `, track);
-					peer.addTrack(track, screenStream);
+					connection.addTrack(track, screenStream);
 				}
 			}
 
@@ -241,12 +280,10 @@
 
 		for (const [memberId, peer] of peers) {
 			if (!members.find((member) => member.socket_id === memberId)) {
-				peer.close();
-				sources.get(memberId)?.disconnect();
-				sources.delete(memberId);
+				peer.connection.close();
+				peer.source?.disconnect();
 				peers.delete(memberId);
 				streams.delete(memberId);
-				pendingIceCandidates.delete(memberId);
 			}
 		}
 	}
@@ -270,17 +307,13 @@
 		client.onChannelMemberLeft = undefined;
 
 		for (const [_, peer] of peers) {
-			peer.close();
-		}
-		for (const [_, source] of sources) {
-			source.disconnect();
+			peer.connection.close();
+			peer.source?.disconnect();
 		}
 
 		peers.clear();
 		streams.clear();
-		sources.clear();
 		audioContext.close();
-		pendingIceCandidates.clear();
 	});
 </script>
 
