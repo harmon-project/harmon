@@ -9,8 +9,7 @@
 
 	interface Peer {
 		connection: RTCPeerConnection;
-		audioSource: MediaStreamAudioSourceNode | undefined;
-		pendingIceCandidates: RTCIceCandidateInit[];
+		audioSource?: MediaStreamAudioSourceNode;
 		makingOffer: boolean;
 		ignoreOffer: boolean;
 	}
@@ -77,11 +76,6 @@
 
 				await peer.connection.setRemoteDescription(event);
 
-				for (const candidate of peer.pendingIceCandidates) {
-					await peer.connection.addIceCandidate(candidate);
-				}
-				peer.pendingIceCandidates = [];
-
 				const answer = await peer.connection.createAnswer();
 
 				await peer.connection.setLocalDescription(answer);
@@ -91,13 +85,6 @@
 			}
 			case "answer": {
 				await peer.connection.setRemoteDescription(event);
-
-				for (const candidate of peer.pendingIceCandidates) {
-					await peer.connection.addIceCandidate(candidate);
-				}
-
-				peer.pendingIceCandidates = [];
-
 				break;
 			}
 			case "candidate": {
@@ -105,12 +92,7 @@
 					break;
 				}
 
-				if (peer.connection.remoteDescription) {
-					await peer.connection.addIceCandidate(event);
-				} else {
-					peer.pendingIceCandidates = [...peer.pendingIceCandidates, event];
-				}
-
+				await peer.connection.addIceCandidate(event);
 				break;
 			}
 		}
@@ -139,8 +121,6 @@
 		const connection = new RTCPeerConnection({ iceServers: client.iceServers });
 		const peer: Peer = {
 			connection,
-			audioSource: undefined,
-			pendingIceCandidates: [],
 			makingOffer: false,
 			ignoreOffer: false
 		};
