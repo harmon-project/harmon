@@ -47,28 +47,6 @@
 		};
 	}
 
-	async function getAudioStream() {
-		try {
-			audioStream = await navigator.mediaDevices.getUserMedia({
-				audio: { noiseSuppression: true, echoCancellation: true }
-			});
-
-			for (const [_, peer] of peers) {
-				for (const track of audioStream.getTracks()) {
-					const hasSender = peer.connection
-						.getSenders()
-						.some((sender) => sender.track?.id === track.id);
-					if (!hasSender) {
-						peer.connection.addTrack(track, audioStream);
-					}
-				}
-			}
-		} catch (err) {
-			error("Failed to acquire audio media stream: ", err);
-			push("Error acquiring audio media stream.");
-		}
-	}
-
 	async function resumeAudio() {
 		try {
 			await audioContext.resume();
@@ -83,17 +61,16 @@
 
 	async function onWebRTCEvent(peerId: string, event: WebRTCEvent) {
 		const peer = peers.get(peerId);
-
 		if (!peer) return;
 
-		const polite = localSocketId > peerId;
 		info(`Received WebRTC event from "${peerId}": `, event);
 
 		switch (event.type) {
 			case "offer": {
-				const readyForOffer =
-					!peer.makingOffer && peer.connection.signalingState === "stable";
-				const offerCollision = !readyForOffer;
+				const polite = localSocketId > peerId;
+				const offerCollision = !(
+					!peer.makingOffer && peer.connection.signalingState === "stable"
+				);
 
 				if (offerCollision && !polite) {
 					peer.ignoreOffer = true;
@@ -146,8 +123,6 @@
 	async function createOffer(peerId: string) {
 		const peer = peers.get(peerId)!;
 
-		if (peer.makingOffer || peer.connection.signalingState !== "stable") return;
-
 		peer.makingOffer = true;
 
 		try {
@@ -164,119 +139,152 @@
 		}
 	}
 
-	async function syncPeers() {
-		for (const member of members) {
-			if (member.socket_id === localSocketId || peers.has(member.socket_id)) continue;
+	async function addPeer(socketId: string) {
+		const connection = new RTCPeerConnection({ iceServers: client.iceServers });
+		const peer: Peer = {
+			connection,
+			audioSource: undefined,
+			pendingIceCandidates: [],
+			makingOffer: false,
+			ignoreOffer: false
+		};
 
-			const connection = new RTCPeerConnection({ iceServers: client.iceServers });
-			const peer: Peer = {
-				connection,
-				audioSource: undefined,
-				pendingIceCandidates: [],
-				makingOffer: false,
-				ignoreOffer: false
+		connection.onconnectionstatechange = () => {
+			info(`Connection state ${socketId}:`, connection.connectionState);
+		};
+
+		connection.oniceconnectionstatechange = () => {
+			info(`ICE state ${socketId}:`, connection.iceConnectionState);
+		};
+
+		connection.onsignalingstatechange = () => {
+			info(`Signaling state ${socketId}:`, connection.signalingState);
+		};
+
+		connection.ontrack = (event) => {
+			info(`Received track from ${socketId}: `, event);
+
+			event.track.onmute = () => {
+				info(`Remote track MUTED from ${socketId}`);
 			};
 
-			connection.onconnectionstatechange = () => {
-				info(`Connection state ${member.socket_id}:`, connection.connectionState);
+			event.track.onunmute = () => {
+				info(`Remote track UNMUTED from ${socketId}`);
 			};
 
-			connection.oniceconnectionstatechange = () => {
-				info(`ICE state ${member.socket_id}:`, connection.iceConnectionState);
+			event.track.onended = () => {
+				info(`Remote track ENDED from ${socketId}`);
 			};
 
-			connection.onsignalingstatechange = () => {
-				info(`Signaling state ${member.socket_id}:`, connection.signalingState);
-			};
+			const stream = event.streams[0] ?? new MediaStream([event.track]);
 
-			connection.ontrack = (event) => {
-				info(`Received track from ${member.socket_id}: `, event);
-			
-				event.track.onmute = () => {
-					info(`Remote track MUTED from ${member.socket_id}`);
-				};
+			if (event.track.kind === "audio") {
+				peer.audioSource?.disconnect();
 
-				event.track.onunmute = () => {
-					info(`Remote track UNMUTED from ${member.socket_id}`);
-				};
+				const audioSource = audioContext.createMediaStreamSource(stream);
+				audioSource.connect(audioContext.destination);
 
-				event.track.onended = () => {
-					info(`Remote track ENDED from ${member.socket_id}`);
-				};
-
-				const stream = event.streams[0] ?? new MediaStream([event.track]);
-
-				if (event.track.kind === "audio") {
-					peer.audioSource?.disconnect();
-					
-					const audioSource = audioContext.createMediaStreamSource(stream);
-					audioSource.connect(audioContext.destination);
-
-					peer.audioSource = audioSource;
-					audioStreams.set(member.socket_id, stream);
-				}
-
-				if (event.track.kind === "video") {
-					videoStreams.set(member.socket_id, stream);
-				}
-			};
-
-			connection.onnegotiationneeded = async () => {
-				info(`Negotiation needed for ${member.socket_id}`);
-				if (connection.signalingState !== "stable" || peer.makingOffer) {
-					return;
-				}
-				await createOffer(member.socket_id);
-			};
-
-			connection.onicecandidate = async (event) => {
-				if (!event.candidate) return;
-
-				const candidate: WebRTCEvent = {
-					type: "candidate",
-					candidate: event.candidate.candidate,
-					sdpMid: event.candidate.sdpMid,
-					sdpMLineIndex: event.candidate.sdpMLineIndex,
-					usernameFragment: event.candidate.usernameFragment
-				};
-				info(`Sending ICE candidate to ${member.socket_id}: `, candidate);
-
-				await client.sendWebRtcEvent(member.socket_id, candidate);
-			};
-
-			connection.onicecandidateerror = (event) => {
-				error(`ICE candidate error for ${member.socket_id}: `, event);
-			};
-
-			if (audioStream) {
-				for (const track of audioStream.getTracks()) {
-					info(`Adding audio track to peer for ${member.socket_id}: `, track);
-					connection.addTrack(track, audioStream);
-				}
+				peer.audioSource = audioSource;
+				audioStreams.set(socketId, stream);
 			}
 
-			if (screenStream) {
-				for (const track of screenStream.getTracks()) {
-					info(`Adding screen track to peer for ${member.socket_id}: `, track);
-					connection.addTrack(track, screenStream);
-				}
+			if (event.track.kind === "video") {
+				videoStreams.set(socketId, stream);
 			}
+		};
 
-			peers.set(member.socket_id, peer);
+		connection.onnegotiationneeded = async () => {
+			info(`Negotiation needed for ${socketId}`);
+			if (connection.signalingState !== "stable" || peer.makingOffer) {
+				return;
+			}
+			await createOffer(socketId);
+		};
+
+		connection.onicecandidate = async (event) => {
+			if (!event.candidate) return;
+
+			const candidate: WebRTCEvent = {
+				type: "candidate",
+				candidate: event.candidate.candidate,
+				sdpMid: event.candidate.sdpMid,
+				sdpMLineIndex: event.candidate.sdpMLineIndex,
+				usernameFragment: event.candidate.usernameFragment
+			};
+			info(`Sending ICE candidate to ${socketId}: `, candidate);
+
+			await client.sendWebRtcEvent(socketId, candidate);
+		};
+
+		connection.onicecandidateerror = (event) => {
+			error(`ICE candidate error for ${socketId}: `, event);
+		};
+
+		if (audioStream) {
+			for (const track of audioStream.getTracks()) {
+				info(`Adding audio track to peer for ${socketId}: `, track);
+				connection.addTrack(track, audioStream);
+			}
 		}
 
-		for (const [memberId, peer] of peers) {
-			if (!members.find((member) => member.socket_id === memberId)) {
-				peer.connection.close();
-				peer.audioSource?.disconnect();
-				peers.delete(memberId);
-				audioStreams.delete(memberId);
-				videoStreams.delete(memberId);
+		if (screenStream) {
+			for (const track of screenStream.getTracks()) {
+				info(`Adding screen track to peer for ${socketId}: `, track);
+				connection.addTrack(track, screenStream);
+			}
+		}
+
+		peers.set(socketId, peer);
+	}
+
+	async function removePeer(socketId: string) {
+		const peer = peers.get(socketId);
+		if (!peer) return;
+
+		peer.connection.close();
+		peer.audioSource?.disconnect();
+		peers.delete(socketId);
+		audioStreams.delete(socketId);
+		videoStreams.delete(socketId);
+	}
+
+	async function syncPeers() {
+		for (const member of members) {
+			if (!peers.has(member.socket_id) && member.socket_id !== localSocketId) {
+				await addPeer(member.socket_id);
+			}
+		}
+
+		for (const [socketId, _] of peers) {
+			if (!members.find((member) => member.socket_id === socketId)) {
+				await removePeer(socketId);
 			}
 		}
 	}
 
-	export async function startScreenShare() {
+	export async function startAudioStream() {
+		try {
+			audioStream = await navigator.mediaDevices.getUserMedia({
+				audio: { noiseSuppression: true, echoCancellation: true }
+			});
+
+			for (const [_, peer] of peers) {
+				for (const track of audioStream.getTracks()) {
+					const hasSender = peer.connection
+						.getSenders()
+						.some((sender) => sender.track?.id === track.id);
+					if (!hasSender) {
+						peer.connection.addTrack(track, audioStream);
+					}
+				}
+			}
+		} catch (err) {
+			error("Failed to acquire audio media stream: ", err);
+			push("Error acquiring audio media stream.");
+		}
+	}
+
+	export async function startScreenStream() {
 		try {
 			screenStream = await navigator.mediaDevices.getDisplayMedia({
 				video: true,
@@ -301,7 +309,7 @@
 		}
 	}
 
-	export async function stopScreenShare() {
+	export async function stopScreenStream() {
 		try {
 			for (const [_, peer] of peers) {
 				for (const sender of peer.connection.getSenders()) {
@@ -334,7 +342,7 @@
 		client.onChannelMemberJoined = syncPeers;
 
 		await syncPeers();
-		await getAudioStream();
+		await startAudioStream();
 	});
 
 	onDestroy(() => {
@@ -344,14 +352,10 @@
 		client.onChannelMemberJoined = undefined;
 		client.onChannelMemberLeft = undefined;
 
-		for (const [_, peer] of peers) {
-			peer.connection.close();
-			peer.audioSource?.disconnect();
+		for (const member of members) {
+			removePeer(member.socket_id);
 		}
 
-		peers.clear();
-		audioStreams.clear();
-		videoStreams.clear();
 		audioContext.close();
 	});
 </script>
