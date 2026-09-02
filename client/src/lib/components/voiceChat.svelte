@@ -68,16 +68,12 @@
 		switch (event.type) {
 			case "offer": {
 				const polite = localSocketId > peerId;
-				const offerCollision = !(
-					!peer.makingOffer && peer.connection.signalingState === "stable"
-				);
+				const offerCollision =
+					peer.makingOffer || peer.connection.signalingState !== "stable";
 
-				if (offerCollision && !polite) {
-					peer.ignoreOffer = true;
-					return;
-				}
+				peer.ignoreOffer = !polite && offerCollision;
 
-				peer.ignoreOffer = false;
+				if (peer.ignoreOffer) return;
 
 				await peer.connection.setRemoteDescription(event);
 
