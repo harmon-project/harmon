@@ -9,7 +9,7 @@
 
 	interface Peer {
 		connection: RTCPeerConnection;
-		source: MediaStreamAudioSourceNode | undefined;
+		audioSource: MediaStreamAudioSourceNode | undefined;
 		pendingIceCandidates: RTCIceCandidateInit[];
 		makingOffer: boolean;
 		ignoreOffer: boolean;
@@ -19,7 +19,8 @@
 	let screenStream: MediaStream | undefined = $state();
 	let audioContext = new AudioContext();
 	let peers = new SvelteMap<string, Peer>();
-	let streams = new SvelteMap<string, MediaStream>();
+	let audioStreams = new SvelteMap<string, MediaStream>();
+	let videoStreams = new SvelteMap<string, MediaStream>();
 
 	let audioReady = $state(audioContext.state == "running");
 
@@ -170,7 +171,7 @@
 			const connection = new RTCPeerConnection({ iceServers: client.iceServers });
 			const peer: Peer = {
 				connection,
-				source: undefined,
+				audioSource: undefined,
 				pendingIceCandidates: [],
 				makingOffer: false,
 				ignoreOffer: false
@@ -190,8 +191,7 @@
 
 			connection.ontrack = (event) => {
 				info(`Received track from ${member.socket_id}: `, event);
-				const stream = event.streams[0] ?? new MediaStream([event.track]);
-
+			
 				event.track.onmute = () => {
 					info(`Remote track MUTED from ${member.socket_id}`);
 				};
@@ -204,12 +204,21 @@
 					info(`Remote track ENDED from ${member.socket_id}`);
 				};
 
-				streams.set(member.socket_id, stream);
+				const stream = event.streams[0] ?? new MediaStream([event.track]);
 
-				const source = audioContext.createMediaStreamSource(stream);
-				source.connect(audioContext.destination);
+				if (event.track.kind === "audio") {
+					peer.audioSource?.disconnect();
+					
+					const audioSource = audioContext.createMediaStreamSource(stream);
+					audioSource.connect(audioContext.destination);
 
-				peer.source = source;
+					peer.audioSource = audioSource;
+					audioStreams.set(member.socket_id, stream);
+				}
+
+				if (event.track.kind === "video") {
+					videoStreams.set(member.socket_id, stream);
+				}
 			};
 
 			connection.onnegotiationneeded = async () => {
@@ -259,9 +268,10 @@
 		for (const [memberId, peer] of peers) {
 			if (!members.find((member) => member.socket_id === memberId)) {
 				peer.connection.close();
-				peer.source?.disconnect();
+				peer.audioSource?.disconnect();
 				peers.delete(memberId);
-				streams.delete(memberId);
+				audioStreams.delete(memberId);
+				videoStreams.delete(memberId);
 			}
 		}
 	}
@@ -336,11 +346,12 @@
 
 		for (const [_, peer] of peers) {
 			peer.connection.close();
-			peer.source?.disconnect();
+			peer.audioSource?.disconnect();
 		}
 
 		peers.clear();
-		streams.clear();
+		audioStreams.clear();
+		videoStreams.clear();
 		audioContext.close();
 	});
 </script>
@@ -377,7 +388,8 @@
 		class="grid min-h-0 flex-1 auto-rows-[minmax(14rem,1fr)] grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-3 overflow-x-hidden overflow-y-auto p-4"
 	>
 		{#each members as member}
-			{@const stream = streams.get(member.socket_id)}
+			{@const audioStream = audioStreams.get(member.socket_id)}
+			{@const videoStream = videoStreams.get(member.socket_id)}
 			<div class="flex min-h-0 w-full flex-col overflow-hidden rounded-2xl bg-gray-800">
 				{#if member.socket_id === client.id}
 					{#if screenStream}
@@ -386,12 +398,12 @@
 						{@render profile(member.profile.name)}
 					{/if}
 				{:else}
-					{#if !!stream && stream.getVideoTracks().length > 0}
-						{@render video(stream)}
+					{#if !!videoStream && videoStream.getVideoTracks().length > 0}
+						{@render video(videoStream)}
 					{:else}
 						{@render profile(member.profile.name)}
 					{/if}
-					<audio class="hidden" autoplay playsinline muted use:sink={stream}></audio>
+					<audio class="hidden" autoplay playsinline muted use:sink={audioStream}></audio>
 				{/if}
 			</div>
 		{/each}
