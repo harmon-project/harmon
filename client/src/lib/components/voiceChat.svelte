@@ -79,7 +79,7 @@
 				const answer = await peer.connection.createAnswer();
 
 				await peer.connection.setLocalDescription(answer);
-				await client.sendWebRtcEvent(peerId, answer);
+				await client.sendWebRTCEvent(peerId, answer);
 
 				break;
 			}
@@ -111,7 +111,7 @@
 			await peer.connection.setLocalDescription(offer);
 
 			info(`Sending offer to ${peerId}: `, offer);
-			await client.sendWebRtcEvent(peerId, offer);
+			await client.sendWebRTCEvent(peerId, offer);
 		} finally {
 			peer.makingOffer = false;
 		}
@@ -189,7 +189,7 @@
 			};
 			info(`Sending ICE candidate to ${socketId}: `, candidate);
 
-			await client.sendWebRtcEvent(socketId, candidate);
+			await client.sendWebRTCEvent(socketId, candidate);
 		};
 
 		connection.onicecandidateerror = (event) => {

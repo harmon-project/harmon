@@ -10,7 +10,7 @@ pub struct IceServer {
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
-pub enum WebRtcEvent {
+pub enum WebRTCEvent {
 	Offer {
 		sdp: String,
 	},
@@ -35,7 +35,7 @@ pub enum WebRtcEvent {
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct SendEventParams {
 	pub socket_id: uuid::Uuid,
-	pub event: WebRtcEvent,
+	pub event: WebRTCEvent,
 }
 
 pub async fn send_event(app: wspc::App, socket: wspc::Socket, params: wspc::Params<SendEventParams>) -> error::Result<()> {
@@ -55,7 +55,7 @@ pub async fn send_event(app: wspc::App, socket: wspc::Socket, params: wspc::Para
 		return Err(error::Error::Unauthorized);
 	}
 
-	app.room(params.socket_id).emit("webRtcEvent", (socket.id(), &params.event))?;
+	app.room(params.socket_id).emit("webRTCEvent", (socket.id(), &params.event))?;
 
 	Ok(())
 }

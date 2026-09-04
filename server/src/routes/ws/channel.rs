@@ -112,10 +112,10 @@ pub async fn join_channel(app: wspc::App, socket: wspc::Socket, params: wspc::Pa
 		let member = member.clone();
 
 		socket.leave(channel).await?;
-		room.emit("onChannelMemberLeft", (member,))?;
+		room.emit("channelMemberLeft", (member,))?;
 	};
 
-	room.emit("onChannelMemberJoined", (member,))?;
+	room.emit("channelMemberJoined", (member,))?;
 
 	socket.join(params.channel_id).await?;
 	socket.set_state(params.channel_id);

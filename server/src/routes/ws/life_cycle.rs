@@ -32,7 +32,7 @@ pub async fn disconnect(app: wspc::App, socket: wspc::Socket) -> error::Result<(
 		};
 
 		socket.leave(channel).await?;
-		room.emit("onChannelMemberLeft", (member,))?;
+		room.emit("channelMemberLeft", (member,))?;
 	};
 
 	Ok(())

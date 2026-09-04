@@ -71,20 +71,20 @@ export class Client {
 			this.onMessageReceived?.(message);
 		});
 
-		this._rpc.on("onChannelMemberJoined", (member) => {
+		this._rpc.on("channelMemberJoined", (member) => {
 			this._session!.currentChannel?.members.push(member);
 
 			this.onChannelMemberJoined?.(member);
 		});
 
-		this._rpc.on("onChannelMemberLeft", (member) => {
+		this._rpc.on("channelMemberLeft", (member) => {
 			this._session!.currentChannel!.members = this._session!.currentChannel!.members.filter(
 				(m) => m.socket_id !== member.socket_id
 			);
 			this.onChannelMemberLeft?.(member);
 		});
 
-		this._rpc.on("webRtcEvent", (socketId, event) => {
+		this._rpc.on("webRTCEvent", (socketId, event) => {
 			this.onWebRTCEvent?.(socketId, event);
 		});
 	}
@@ -165,8 +165,8 @@ export class Client {
 		return profile;
 	}
 
-	async sendWebRtcEvent(socket_id: string, event: WebRTCEvent) {
-		await this._rpc.call("sendWebRtcEvent", socket_id, event);
+	async sendWebRTCEvent(socket_id: string, event: WebRTCEvent) {
+		await this._rpc.call("sendWebRTCEvent", socket_id, event);
 	}
 
 	async getIceServers() {
@@ -296,11 +296,14 @@ export type WebRTCEvent =
 
 interface ServerToClientEvents {
 	connectionReady(id: string): void;
+
 	messageReceived(message: Message): void;
-	onChannelMemberJoined: (member: ChannelMember) => void;
-	onChannelMemberLeft: (member: ChannelMember) => void;
+
+	channelMemberJoined: (member: ChannelMember) => void;
+	channelMemberLeft: (member: ChannelMember) => void;
 	channelDeleted(channel: Channel): void;
-	webRtcEvent(socket_id: string, event: WebRTCEvent): void;
+
+	webRTCEvent(socket_id: string, event: WebRTCEvent): void;
 }
 
 interface ClientToServerEvents {
@@ -319,6 +322,6 @@ interface ClientToServerEvents {
 	updateProfile(name: string): Profile;
 	getProfile(public_key?: string): Profile | undefined;
 
-	sendWebRtcEvent(socketId: string, event: WebRTCEvent): void;
+	sendWebRTCEvent(socketId: string, event: WebRTCEvent): void;
 	getIceServers(): RTCIceServer[];
 }
