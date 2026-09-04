@@ -1,6 +1,6 @@
 # harmon-server
 
-*all commands must be executed in the ./server folder*
+_all commands must be executed in the ./server folder_
 
 ## Developing
 
@@ -15,13 +15,17 @@ cargo build --release
 ```
 
 #### Sqlx-cli
+
 used to manage migrations
+
 ```rs
 cargo install sqlx-cli --no-default-features --features rustls,sqlite
 ```
 
 ## migrations
+
 create new migration
+
 ```sh
 sqlx migrate add -r <name>
 ```

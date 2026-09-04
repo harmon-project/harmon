@@ -1,0 +1,41 @@
+services:
+  harmon:
+    image: heraclitoqsaldanha/harmon-server:latest
+    container_name: harmon
+    restart: unless-stopped
+    working_dir: /app
+    networks:
+      - webnet
+    env_file:
+      - .env
+    environment:
+      - SERVER_ADDR=0.0.0.0
+      - SERVER_PORT=6464
+      - CONFIG_PATH=/app/config.toml
+      - DATABASE_URL=sqlite:///app/data/database.db
+    volumes:
+      - ./config.toml:/app/config.toml:ro
+      - ./icon.png:/app/icon.png:ro
+      - harmon:/app/data
+  caddy:
+    image: caddy:2.11.4
+    container_name: caddy
+    restart: unless-stopped
+    networks:
+      - webnet
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - 80:80
+      - 443:443
+
+volumes:
+  harmon:
+  caddy_data:
+  caddy_config:
+
+networks:
+  webnet:
+    name: webnet

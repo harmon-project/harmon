@@ -1,6 +1,6 @@
 # harmon-client
 
-*all commands must be executed in the ./client folder*
+_all commands must be executed in the ./client folder_
 
 ## dependencies
 
@@ -23,6 +23,7 @@ sudo apt install -y \
 	libayatana-appindicator3-dev \
 	librsvg2-dev
 ```
+
 </details>
 
 <details>
@@ -43,6 +44,7 @@ sudo pacman -S --needed \
 	librsvg \
 	libvips
 ```
+
 </details>
 
 <details>
@@ -62,6 +64,7 @@ sudo xbps-install -S \
 	gcc \
 	pkg-config
 ```
+
 </details>
 
 ### node dependencies
@@ -71,6 +74,13 @@ npm install
 ```
 
 ## run
+
+```sh
+cp .env.example .env
+npm run dev
+```
+
+## run tauri version
 
 ```sh
 cp .env.example .env

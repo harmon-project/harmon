@@ -13,6 +13,10 @@
 
 ### documentation
 
+[self hosting](self-hosting.md)
+
+### development
+
 [server](server.md)
 
 [client](client.md)

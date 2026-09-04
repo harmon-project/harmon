@@ -1,0 +1,11 @@
+title = "My Server"
+icon_path = "icon.png"
+admin_public_keys = []
+file_path = "/app/data"
+
+public_https_address = "my-server.com"
+public_ipv4_address = "0.0.0.0"
+public_ipv6_address = "::"
+
+[[ice_servers]]
+urls = ["stun:stun.l.google.com:19302"]
