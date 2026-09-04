@@ -76,13 +76,11 @@ npm install
 ## run
 
 ```sh
-cp .env.example .env
 npm run dev
 ```
 
 ## run tauri version
 
 ```sh
-cp .env.example .env
 npm run tauri dev
 ```

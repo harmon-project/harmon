@@ -57,7 +57,6 @@ jobs:
         shell: bash
         run: |
           cd client && \
-          cp .env.example .env && \
           npm ci && \
           npm run tauri icon ./src/lib/assets/icon.png && \
           npm run tauri build
@@ -115,10 +114,9 @@ jobs:
       - name: Build client
         shell: bash
         run: |
-          cd client
-          cp .env.example .env
-          npm ci
-          npm run tauri icon ./src/lib/assets/icon.png
+          cd client && \
+          npm ci && \
+          npm run tauri icon ./src/lib/assets/icon.png && \
           npm run tauri build
 
       - name: Upload Windows NSIS artifact
