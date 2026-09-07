@@ -141,7 +141,9 @@
 
 			const stream = event.streams[0] ?? new MediaStream([event.track]);
 
-			if (event.track.kind === "audio") {
+			if (stream.getVideoTracks().length > 0) {
+				peer.videoStream = stream;
+			} else {
 				peer.audioSource?.disconnect();
 
 				const audioSource = audioContext.createMediaStreamSource(stream);
@@ -149,10 +151,6 @@
 
 				peer.audioSource = audioSource;
 				peer.audioStream = stream;
-			}
-
-			if (event.track.kind === "video") {
-				peer.videoStream = stream;
 			}
 		};
 
