@@ -22,6 +22,10 @@
 		"./pkdns": {
 			"types": "./build/pkdns.d.ts",
 			"default": "./build/pkdns.js"
+		},
+		"./webrtc": {
+			"types": "./build/webrtc.svelte.d.ts",
+			"default": "./build/webrtc.svelte.js"
 		}
 	},
 	"scripts": {

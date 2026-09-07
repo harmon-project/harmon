@@ -1,27 +1,12 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import type { Client, WebRTCEvent } from "harmon-lib";
+	import type { Client } from "harmon-lib";
 	import { push } from "./toast.svelte";
 	import { SvelteMap } from "svelte/reactivity";
 	import { error, info } from "$lib/log";
+	import { RTCPeer, type WebRTCEvent } from "harmon-lib/webrtc";
 
 	const { client }: { client: Client } = $props();
-
-	class RTCPeer {
-		connection: RTCPeerConnection;
-		makingOffer: boolean = $state(false);
-		ignoreOffer: boolean = $state(false);
-		isPolite: boolean = $state(false);
-
-		audioSource?: MediaStreamAudioSourceNode = $state();
-		audioStream?: MediaStream = $state();
-		videoStream?: MediaStream = $state();
-
-		constructor(iceServers: RTCIceServer[], isPolite: boolean) {
-			this.connection = new RTCPeerConnection({ iceServers });
-			this.isPolite = isPolite;
-		}
-	}
 
 	let audioStream: MediaStream | undefined = $state();
 	let screenStream: MediaStream | undefined = $state();
@@ -383,7 +368,8 @@
 					{:else}
 						{@render profile(member.profile.name)}
 					{/if}
-					<audio class="hidden" autoplay playsinline muted use:sink={peer?.audioStream}></audio>
+					<audio class="hidden" autoplay playsinline muted use:sink={peer?.audioStream}
+					></audio>
 				{/if}
 			</div>
 		{/each}

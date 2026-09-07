@@ -2,6 +2,7 @@ import { uint8ArrayToZ32, z32toUint8Array } from "./utils.js";
 import { Client as JsonRPCClient } from "./jsonrpc.js";
 import { getInfo } from "./http.js";
 import { DNSClient } from "./pkdns.js";
+import { type WebRTCEvent } from "./webrtc.svelte.js";
 
 type Session = {
 	publicKey: Uint8Array;
@@ -281,18 +282,6 @@ export interface CurrentChannel {
 	channel: Channel;
 	members: ChannelMember[];
 }
-export type WebRTCEvent =
-	| {
-			type: "answer" | "offer" | "pranswer" | "rollback";
-			sdp?: string;
-	  }
-	| {
-			type: "candidate";
-			candidate?: string;
-			sdpMLineIndex?: number | null;
-			sdpMid?: string | null;
-			usernameFragment?: string | null;
-	  };
 
 interface ServerToClientEvents {
 	connectionReady(id: string): void;
