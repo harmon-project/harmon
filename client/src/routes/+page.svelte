@@ -4,7 +4,7 @@
 	import { info } from "$lib/log";
 	import { sha256, sign } from "harmon-lib/crypto";
 	import { stringToUint8Array, z32toUint8Array } from "harmon-lib/utils";
-	import { useStorage } from "$lib/storage.svelte";
+	import { useStorage } from "$lib/storage";
 	import { onMount } from "svelte";
 	import { Client } from "harmon-lib";
 	import AddServerModal from "$lib/components/addServerModal.svelte";

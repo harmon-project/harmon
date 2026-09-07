@@ -1,5 +1,3 @@
-import { parseErr } from "./error";
-
 export function clamp(value: number, min: number, max: number) {
 	return Math.min(Math.max(value, min), max);
 }
@@ -14,11 +12,10 @@ export function debounce(callback: Function, wait = 1000) {
 }
 
 export function parse<T>(input: any): T | undefined {
-	const data = String(input);
-	const [ok, value] = parseErr<T, any>(JSON.parse, data);
-	if (ok) {
-		return value;
-	} else {
+	try {
+		const data = String(input);
+		return JSON.parse(data);
+	} catch {
 		return undefined;
 	}
 }
