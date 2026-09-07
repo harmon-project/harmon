@@ -250,7 +250,7 @@
 		try {
 			screenStream = await navigator.mediaDevices.getDisplayMedia({
 				video: true,
-				audio: false
+				audio: true
 			});
 
 			for (const [_, peer] of peers) {
@@ -345,8 +345,11 @@
 {/snippet}
 
 {#snippet video(stream: MediaStream)}
-	<video class="min-h-0 w-full flex-1 bg-black" autoplay playsinline muted use:sink={stream}
-	></video>
+	<video class="min-h-0 w-full flex-1 bg-black" autoplay playsinline use:sink={stream}></video>
+{/snippet}
+
+{#snippet audio(stream: MediaStream)}
+	<audio class="hidden" autoplay playsinline muted use:sink={stream}></audio>
 {/snippet}
 
 <div class="flex h-full w-full flex-col bg-gray-900">
@@ -368,8 +371,9 @@
 					{:else}
 						{@render profile(member.profile.name)}
 					{/if}
-					<audio class="hidden" autoplay playsinline muted use:sink={peer?.audioStream}
-					></audio>
+					{#if peer?.audioStream}
+						{@render audio(peer.audioStream)}
+					{/if}
 				{/if}
 			</div>
 		{/each}
