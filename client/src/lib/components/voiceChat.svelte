@@ -7,19 +7,26 @@
 
 	const { client }: { client: Client } = $props();
 
-	interface Peer {
+	class RTCPeer {
 		connection: RTCPeerConnection;
-		audioSource?: MediaStreamAudioSourceNode;
-		makingOffer: boolean;
-		ignoreOffer: boolean;
+		makingOffer: boolean = $state(false);
+		ignoreOffer: boolean = $state(false);
+		isPolite: boolean = $state(false);
+
+		audioSource?: MediaStreamAudioSourceNode = $state();
+		audioStream?: MediaStream = $state();
+		videoStream?: MediaStream = $state();
+
+		constructor(iceServers: RTCIceServer[], isPolite: boolean) {
+			this.connection = new RTCPeerConnection({ iceServers });
+			this.isPolite = isPolite;
+		}
 	}
 
 	let audioStream: MediaStream | undefined = $state();
 	let screenStream: MediaStream | undefined = $state();
 	let audioContext = new AudioContext();
-	let peers = new SvelteMap<string, Peer>();
-	let audioStreams = new SvelteMap<string, MediaStream>();
-	let videoStreams = new SvelteMap<string, MediaStream>();
+	let peers = new SvelteMap<string, RTCPeer>();
 
 	let audioReady = $state(audioContext.state == "running");
 
@@ -118,26 +125,21 @@
 	}
 
 	async function addPeer(socketId: string) {
-		const connection = new RTCPeerConnection({ iceServers: client.iceServers });
-		const peer: Peer = {
-			connection,
-			makingOffer: false,
-			ignoreOffer: false
+		const peer = new RTCPeer(client.iceServers, localSocketId > socketId);
+
+		peer.connection.onconnectionstatechange = () => {
+			info(`Connection state ${socketId}:`, peer.connection.connectionState);
 		};
 
-		connection.onconnectionstatechange = () => {
-			info(`Connection state ${socketId}:`, connection.connectionState);
+		peer.connection.oniceconnectionstatechange = () => {
+			info(`ICE state ${socketId}:`, peer.connection.iceConnectionState);
 		};
 
-		connection.oniceconnectionstatechange = () => {
-			info(`ICE state ${socketId}:`, connection.iceConnectionState);
+		peer.connection.onsignalingstatechange = () => {
+			info(`Signaling state ${socketId}:`, peer.connection.signalingState);
 		};
 
-		connection.onsignalingstatechange = () => {
-			info(`Signaling state ${socketId}:`, connection.signalingState);
-		};
-
-		connection.ontrack = (event) => {
+		peer.connection.ontrack = (event) => {
 			info(`Received track from ${socketId}: `, event);
 
 			event.track.onmute = () => {
@@ -161,23 +163,23 @@
 				audioSource.connect(audioContext.destination);
 
 				peer.audioSource = audioSource;
-				audioStreams.set(socketId, stream);
+				peer.audioStream = stream;
 			}
 
 			if (event.track.kind === "video") {
-				videoStreams.set(socketId, stream);
+				peer.videoStream = stream;
 			}
 		};
 
-		connection.onnegotiationneeded = async () => {
+		peer.connection.onnegotiationneeded = async () => {
 			info(`Negotiation needed for ${socketId}`);
-			if (connection.signalingState !== "stable" || peer.makingOffer) {
+			if (peer.connection.signalingState !== "stable" || peer.makingOffer) {
 				return;
 			}
 			await createOffer(socketId);
 		};
 
-		connection.onicecandidate = async (event) => {
+		peer.connection.onicecandidate = async (event) => {
 			if (!event.candidate) return;
 
 			const candidate: WebRTCEvent = {
@@ -192,21 +194,21 @@
 			await client.sendWebRTCEvent(socketId, candidate);
 		};
 
-		connection.onicecandidateerror = (event) => {
+		peer.connection.onicecandidateerror = (event) => {
 			error(`ICE candidate error for ${socketId}: `, event);
 		};
 
 		if (audioStream) {
 			for (const track of audioStream.getTracks()) {
 				info(`Adding audio track to peer for ${socketId}: `, track);
-				connection.addTrack(track, audioStream);
+				peer.connection.addTrack(track, audioStream);
 			}
 		}
 
 		if (screenStream) {
 			for (const track of screenStream.getTracks()) {
 				info(`Adding screen track to peer for ${socketId}: `, track);
-				connection.addTrack(track, screenStream);
+				peer.connection.addTrack(track, screenStream);
 			}
 		}
 
@@ -219,9 +221,8 @@
 
 		peer.connection.close();
 		peer.audioSource?.disconnect();
+
 		peers.delete(socketId);
-		audioStreams.delete(socketId);
-		videoStreams.delete(socketId);
 	}
 
 	async function syncPeers() {
@@ -368,8 +369,7 @@
 		class="grid min-h-0 flex-1 auto-rows-[minmax(14rem,1fr)] grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-3 overflow-x-hidden overflow-y-auto p-4"
 	>
 		{#each members as member}
-			{@const audioStream = audioStreams.get(member.socket_id)}
-			{@const videoStream = videoStreams.get(member.socket_id)}
+			{@const peer = peers.get(member.socket_id)}
 			<div class="flex min-h-0 w-full flex-col overflow-hidden rounded-2xl bg-gray-800">
 				{#if member.socket_id === client.id}
 					{#if screenStream}
@@ -378,12 +378,12 @@
 						{@render profile(member.profile.name)}
 					{/if}
 				{:else}
-					{#if !!videoStream && videoStream.getVideoTracks().length > 0}
-						{@render video(videoStream)}
+					{#if !!peer?.videoStream && peer?.videoStream.getVideoTracks().length > 0}
+						{@render video(peer.videoStream)}
 					{:else}
 						{@render profile(member.profile.name)}
 					{/if}
-					<audio class="hidden" autoplay playsinline muted use:sink={audioStream}></audio>
+					<audio class="hidden" autoplay playsinline muted use:sink={peer?.audioStream}></audio>
 				{/if}
 			</div>
 		{/each}
