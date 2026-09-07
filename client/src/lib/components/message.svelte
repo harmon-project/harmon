@@ -48,6 +48,8 @@
 					<a
 						download={attachment.name}
 						href={`${url}/files/${attachment.id}`}
+						target="_blank"
+						rel="noopener noreferrer"
 						class="absolute -top-2 -right-2 z-10 hidden cursor-pointer rounded-sm bg-gray-900 p-1 group-hover:flex"
 					>
 						<Fa class="text-2xl" icon={faDownload} />
