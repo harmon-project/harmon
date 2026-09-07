@@ -126,9 +126,14 @@
 
 		peer.connection.ontrack = (event) => {
 			info(`Received track from ${socketId}: `, event);
+			const stream = event.streams[0] ?? new MediaStream([event.track]);
 
 			event.track.onmute = () => {
 				info(`Remote track MUTED from ${socketId}`);
+
+				if (event.track.kind === "video" && peer.videoStream === stream) {
+					peer.videoStream = undefined;
+				}
 			};
 
 			event.track.onunmute = () => {
@@ -138,8 +143,6 @@
 			event.track.onended = () => {
 				info(`Remote track ENDED from ${socketId}`);
 			};
-
-			const stream = event.streams[0] ?? new MediaStream([event.track]);
 
 			if (stream.getVideoTracks().length > 0) {
 				peer.videoStream = stream;
@@ -273,8 +276,8 @@
 		try {
 			for (const [_, peer] of peers) {
 				for (const sender of peer.connection.getSenders()) {
-					if (sender.track && sender.track.kind === "video") {
-						sender.replaceTrack(null);
+					if (sender.track?.kind === "video") {
+						peer.connection.removeTrack(sender);
 					}
 				}
 			}
@@ -364,7 +367,7 @@
 						{@render profile(member.profile.name)}
 					{/if}
 				{:else}
-					{#if !!peer?.videoStream && peer?.videoStream.getVideoTracks().length > 0}
+					{#if peer?.videoStream}
 						{@render video(peer.videoStream)}
 					{:else}
 						{@render profile(member.profile.name)}
