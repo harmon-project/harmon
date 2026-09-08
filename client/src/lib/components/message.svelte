@@ -1,11 +1,23 @@
 <script lang="ts">
-	import { faDownload, faFile, faTrash } from "@fortawesome/free-solid-svg-icons";
+	import {
+		faDownload,
+		faFile,
+		faTrash,
+		faPencil,
+		faEllipsisH
+	} from "@fortawesome/free-solid-svg-icons";
 	import type { Message } from "harmon-lib";
 	import Fa from "svelte-fa";
 	import Markdown from "./markdown.svelte";
 
-	const { url, message, onDelete }: { url: string; message: Message; onDelete?: () => void } =
-		$props();
+	type MessageParams = {
+		url: string;
+		message: Message;
+		onEdit?: () => void;
+		onDelete?: () => void;
+	};
+
+	const { url, message, onEdit, onDelete }: MessageParams = $props();
 
 	function formatDate(dateString: string): string {
 		const date = new Date(dateString);
@@ -37,14 +49,21 @@
 	<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500">
 		{message.profile.name[0]}
 	</div>
-	{#if onDelete}
-		<button
-			onclick={onDelete}
-			class="absolute top-2 right-2 z-10 hidden cursor-pointer rounded-sm p-1 group-hover:flex"
-		>
-			<Fa icon={faTrash} />
+	<div
+		class="absolute top-1 right-8 flex items-center justify-center gap-1 rounded-md bg-gray-900 px-1 py-1 opacity-0 transition-opacity *:cursor-pointer *:rounded-sm *:p-1 *:transition group-hover:opacity-100 *:hover:bg-white/10 [&_svg]:transition-transform [&>*:hover>svg]:scale-110"
+	>
+		{#if onEdit}
+			<button> <Fa icon={faPencil} /> </button>
+		{/if}
+		{#if onDelete}
+			<button onclick={onDelete} class="text-red-400">
+				<Fa icon={faTrash} />
+			</button>
+		{/if}
+		<button>
+			<Fa icon={faEllipsisH} />
 		</button>
-	{/if}
+	</div>
 	<div class="shrink">
 		<div class="flex gap-2">
 			<p class="text-1xl text-gray-1 00 font-extrabold">{message.profile.name}</p>
