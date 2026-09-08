@@ -4,10 +4,13 @@
 		faFile,
 		faTrash,
 		faPencil,
-		faEllipsisH
+		faEllipsisH,
+		faCopy,
+		faHashtag
 	} from "@fortawesome/free-solid-svg-icons";
 	import type { Message } from "harmon-lib";
 	import Fa from "svelte-fa";
+	import ContextMenu from "./context-menu.svelte";
 	import Markdown from "./markdown.svelte";
 
 	type MessageParams = {
@@ -18,6 +21,13 @@
 	};
 
 	const { url, message, onEdit, onDelete }: MessageParams = $props();
+
+	let menuPosition = $state<{ x: number; y: number } | null>(null);
+
+	function openMenu(event: MouseEvent) {
+		event.preventDefault();
+		menuPosition = { x: event.clientX, y: event.clientY };
+	}
 
 	function formatDate(dateString: string): string {
 		const date = new Date(dateString);
@@ -45,10 +55,15 @@
 	}
 </script>
 
-<div class="group relative flex flex-row gap-1 p-2 hover:bg-gray-800">
+<div
+	role="listitem"
+	class="group relative flex flex-row gap-1 p-2 hover:bg-gray-800"
+	oncontextmenu={openMenu}
+>
 	<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500">
 		{message.profile.name[0]}
 	</div>
+	<!-- Menu com os ícones de acesso direto -->
 	<div
 		class="absolute top-1 right-8 flex items-center justify-center gap-1 rounded-md bg-gray-900 px-1 py-1 opacity-0 transition-opacity *:cursor-pointer *:rounded-sm *:p-1 *:transition group-hover:opacity-100 *:hover:bg-white/10 [&_svg]:transition-transform [&>*:hover>svg]:scale-110"
 	>
@@ -60,10 +75,33 @@
 				<Fa icon={faTrash} />
 			</button>
 		{/if}
-		<button>
+		<button onclick={openMenu}>
 			<Fa icon={faEllipsisH} />
 		</button>
 	</div>
+	<!-- Menu de contexto (clicando na ellipsis) -->
+	<ContextMenu bind:position={menuPosition}>
+		{#if onDelete}
+			<button onclick={onDelete} class="text-red-400">
+				<Fa icon={faTrash} />
+				Deletar
+			</button>
+		{/if}
+		{#if onEdit}
+			<button onclick={onEdit}>
+				<Fa icon={faPencil} />
+				Editar
+			</button>
+		{/if}
+		<button onclick={() => navigator.clipboard.writeText(message.content)}>
+			<Fa icon={faCopy} />
+			Copiar texto
+		</button>
+		<button onclick={() => navigator.clipboard.writeText(message.id)}>
+			<Fa icon={faHashtag} />
+			Copiar id
+		</button>
+	</ContextMenu>
 	<div class="min-w-0 shrink">
 		<div class="flex gap-2">
 			<p class="text-1xl text-gray-1 00 font-extrabold">{message.profile.name}</p>
