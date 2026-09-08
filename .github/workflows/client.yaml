@@ -94,13 +94,6 @@ jobs:
           npm run tauri icon ./src/lib/assets/icon.png && \
           npm run tauri build
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          name: harmon-html
-          path: client/build
-          if-no-files-found: error
-
       - name: Upload AppImage artifact
         uses: actions/upload-artifact@v4
         with:
@@ -173,6 +166,14 @@ jobs:
       - build-windows
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Delete previous nightly release and tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release delete nightly --yes --cleanup-tag || true
+
       - name: Download Linux artifacts
         uses: actions/download-artifact@v4
         with:
