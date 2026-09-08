@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { faDownload, faFile } from "@fortawesome/free-solid-svg-icons";
+	import { faDownload, faFile, faTrash } from "@fortawesome/free-solid-svg-icons";
 	import type { Message } from "harmon-lib";
 	import Fa from "svelte-fa";
 	import Markdown from "./markdown.svelte";
 
-	const { url, message }: { url: string; message: Message } = $props();
+	const { url, message, onDelete }: { url: string; message: Message; onDelete?: () => void } =
+		$props();
 
 	function formatDate(dateString: string): string {
 		const date = new Date(dateString);
@@ -32,10 +33,18 @@
 	}
 </script>
 
-<div class="flex flex-row gap-1 p-2 hover:bg-gray-800">
+<div class="group relative flex flex-row gap-1 p-2 hover:bg-gray-800">
 	<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500">
 		{message.profile.name[0]}
 	</div>
+	{#if onDelete}
+		<button
+			onclick={onDelete}
+			class="absolute top-2 right-2 z-10 hidden cursor-pointer rounded-sm p-1 group-hover:flex"
+		>
+			<Fa icon={faTrash} />
+		</button>
+	{/if}
 	<div class="shrink">
 		<div class="flex gap-2">
 			<p class="text-1xl text-gray-1 00 font-extrabold">{message.profile.name}</p>
@@ -50,7 +59,7 @@
 						href={`${url}/files/${attachment.id}`}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="absolute -top-2 -right-2 z-10 hidden cursor-pointer rounded-sm bg-gray-900 p-1 group-hover:flex"
+						class="absolute top-1 right-1 z-10 hidden cursor-pointer rounded-sm bg-gray-900 p-1 group-hover:flex"
 					>
 						<Fa class="text-2xl" icon={faDownload} />
 					</a>

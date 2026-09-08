@@ -12,6 +12,11 @@ pub struct SendMessageParams {
 }
 
 #[derive(Debug, serde::Deserialize)]
+pub struct DeleteMessageParams {
+	pub message_id: Uuid,
+}
+
+#[derive(Debug, serde::Deserialize)]
 pub struct LoadMessagesParams {
 	pub before_id: Option<Uuid>,
 }
@@ -76,6 +81,46 @@ pub async fn send_message(app: wspc::App, socket: wspc::Socket, params: wspc::Pa
 	app.room(channel).emit("messageReceived", (message,))?;
 
 	Ok(())
+}
+
+pub async fn delete_message(app: wspc::App, socket: wspc::Socket, params: wspc::Params<DeleteMessageParams>) -> error::Result<Message> {
+	let state = app.get_state::<app::AppState>().unwrap();
+
+	let Some(auth) = socket.get_state::<auth::AuthenticatedPayload>() else {
+		return Err(error::Error::Unauthorized);
+	};
+
+	let Some(profile) = db::get_profile_by_public_key(&state.db_pool, auth.public_key).await? else {
+		return Err(error::Error::Unauthorized);
+	};
+
+	let mut tx = state.db_pool.begin().await?;
+
+	let files = db::get_files_from_message(&mut *tx, params.message_id).await?;
+	let message = db::delete_message(&mut *tx, params.message_id).await?;
+
+	if message.profile_id != profile.id {
+		return Err(error::Error::Unauthorized);
+	}
+
+	for file in &files {
+		db::decrement_file_counter(&mut *tx, file.id).await?;
+	}
+
+	tx.commit().await?;
+
+	let message = Message {
+		id: message.id,
+		channel_id: message.channel_id,
+		content: message.content,
+		profile: profile.into(),
+		attachments: files.into_iter().map(Into::into).collect(),
+		created_at: message.created_at,
+	};
+
+	app.room(message.channel_id).emit("messageDeleted", (&message,))?;
+
+	Ok(message)
 }
 
 pub async fn load_messages(app: wspc::App, socket: wspc::Socket, params: wspc::Params<LoadMessagesParams>) -> error::Result<Vec<Message>> {

@@ -28,6 +28,7 @@ export class Client {
 	public onConnectionReady?: () => void;
 	public onConnectionClosed?: () => void;
 	public onMessageReceived?: (message: Message) => void;
+	public onMessageDeleted?: (message: Message) => void;
 	public onChannelMemberJoined?: (member: ChannelMember) => void;
 	public onChannelMemberLeft?: (member: ChannelMember) => void;
 	public onWebRTCEvent?: (socketId: string, event: WebRTCEvent) => void;
@@ -70,6 +71,10 @@ export class Client {
 
 		this._rpc.on("messageReceived", (message) => {
 			this.onMessageReceived?.(message);
+		});
+
+		this._rpc.on("messageDeleted", (message) => {
+			this.onMessageDeleted?.(message);
 		});
 
 		this._rpc.on("channelMemberJoined", (member) => {
@@ -141,6 +146,10 @@ export class Client {
 
 	async sendMessage(message: string, attachments: string[]) {
 		return await this._rpc.call("sendMessage", message, attachments);
+	}
+
+	async deleteMessage(messageId: string) {
+		return await this._rpc.call("deleteMessage", messageId);
 	}
 
 	async createChannel(name: string) {
@@ -287,6 +296,7 @@ interface ServerToClientEvents {
 	connectionReady(id: string): void;
 
 	messageReceived(message: Message): void;
+	messageDeleted(message: Message): void;
 
 	channelMemberJoined: (member: ChannelMember) => void;
 	channelMemberLeft: (member: ChannelMember) => void;
@@ -302,6 +312,7 @@ interface ClientToServerEvents {
 
 	joinChannel(channelId: string): CurrentChannel;
 	sendMessage(message: string, attachments: string[]): void;
+	deleteMessage(messageId: string): Message;
 	loadMessages(beforeId?: string): Message[];
 
 	createChannel(name: string): Channel;

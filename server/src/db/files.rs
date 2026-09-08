@@ -115,6 +115,31 @@ pub async fn increment_file_counter(pool: impl sqlx::SqliteExecutor<'_>, id: Uui
 	.await?)
 }
 
+pub async fn decrement_file_counter(pool: impl sqlx::SqliteExecutor<'_>, id: Uuid) -> error::Result<File> {
+	Ok(sqlx::query_as!(
+		File,
+		r#"
+			UPDATE
+				files
+			SET
+				counter = counter - 1
+			WHERE
+				id = ?
+			RETURNING
+				id as "id!: Uuid",
+				name,
+				hash as "hash!: crypto::Hash32",
+				size,
+				mime_type,
+				counter,
+				created_at as "created_at!: time::OffsetDateTime"
+		;"#,
+		id
+	)
+	.fetch_one(pool)
+	.await?)
+}
+
 pub async fn get_files_from_message(pool: impl sqlx::SqliteExecutor<'_>, message_id: Uuid) -> error::Result<Vec<File>> {
 	Ok(sqlx::query_as!(
 		File,

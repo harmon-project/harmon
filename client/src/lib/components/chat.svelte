@@ -54,6 +54,10 @@
 		await scrollToBottom();
 	}
 
+	async function messageDeleted(message: Message) {
+		messages = messages.filter((msg) => msg.id !== message.id);
+	}
+
 	async function messagesLoaded(msgs: Message[]) {
 		hasMore = msgs.length > 0;
 
@@ -84,6 +88,10 @@
 		isLoadingMessages = false;
 	}
 
+	async function deleteMessage(messageId: string) {
+		await client.deleteMessage(messageId);
+	}
+
 	function onScroll() {
 		if (!scrollContainer) return;
 
@@ -94,6 +102,7 @@
 
 	onMount(() => {
 		client.onMessageReceived = messageReceived;
+		client.onMessageDeleted = messageDeleted;
 
 		loadMessages();
 	});
@@ -107,8 +116,16 @@
 			class="flex h-full w-full overflow-y-auto font-mono"
 		>
 			<div class="flex w-full flex-col">
-				{#each messages as msg}
-					<Msg message={msg} url={client.url} />
+				{#each messages as message}
+					{#if message.profile.public_key === client.profile?.public_key}
+						<Msg
+							{message}
+							url={client.url}
+							onDelete={() => deleteMessage(message.id)}
+						/>
+					{:else}
+						<Msg {message} url={client.url} />
+					{/if}
 				{/each}
 			</div>
 		</div>

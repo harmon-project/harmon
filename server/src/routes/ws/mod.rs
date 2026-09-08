@@ -22,6 +22,7 @@ pub fn router(state: &app::AppState) -> MethodRouter<app::AppState> {
 	app.on("confirmChallenge", auth::confirm_challenge);
 
 	app.on("sendMessage", message::send_message);
+	app.on("deleteMessage", message::delete_message);
 	app.on("loadMessages", message::load_messages);
 
 	app.on("joinChannel", channel::join_channel);

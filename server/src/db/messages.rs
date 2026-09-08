@@ -11,16 +11,6 @@ pub struct Message {
 	pub created_at: time::OffsetDateTime,
 }
 
-#[derive(Debug, Clone)]
-pub struct MessageWithFiles {
-	pub id: Uuid,
-	pub channel_id: Uuid,
-	pub profile_id: Uuid,
-	pub content: String,
-	pub files: Vec<db::File>,
-	pub created_at: time::OffsetDateTime,
-}
-
 pub async fn create_message(pool: impl sqlx::SqliteExecutor<'_>, channel_id: Uuid, profile_id: Uuid, content: &str) -> error::Result<Message> {
 	let id = Uuid::now_v7();
 	let created_at = time::OffsetDateTime::now_utc();
@@ -45,6 +35,27 @@ pub async fn create_message(pool: impl sqlx::SqliteExecutor<'_>, channel_id: Uui
 		profile_id,
 		content,
 		created_at
+	)
+	.fetch_one(pool)
+	.await?)
+}
+
+pub async fn delete_message(pool: impl sqlx::SqliteExecutor<'_>, id: Uuid) -> error::Result<Message> {
+	Ok(sqlx::query_as!(
+		Message,
+		r#"
+			DELETE FROM
+				messages
+			WHERE
+				id = ?
+			RETURNING
+				id as "id!: Uuid",
+				channel_id as "channel_id!: Uuid",
+				profile_id as "profile_id!: Uuid",
+				content as "content!",
+				created_at as "created_at!: time::OffsetDateTime"
+		;"#,
+		id
 	)
 	.fetch_one(pool)
 	.await?)
