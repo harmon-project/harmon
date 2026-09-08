@@ -10,8 +10,8 @@
 	} from "@fortawesome/free-solid-svg-icons";
 	import type { Message } from "harmon-lib";
 	import Fa from "svelte-fa";
-	import ContextMenu from "./context-menu.svelte";
-	import Markdown from "./markdown.svelte";
+	import ContextMenu from "$lib/components/contextMenu.svelte";
+	import Markdown from "$lib/components/markdown.svelte";
 
 	type MessageParams = {
 		url: string;
@@ -53,6 +53,19 @@
 			minute: "2-digit"
 		});
 	}
+
+	function getColor(): string {
+		let hash = 0;
+
+		for (let i = 0; i < message.profile.public_key.length; i++) {
+			const char = message.profile.public_key.charCodeAt(i);
+			hash = (hash << 5) - hash + char;
+		}
+
+		const hue = (hash >>> 0) % 360;
+
+		return `hsl(${hue}, 70%, 55%)`;
+	}
 </script>
 
 <div
@@ -60,10 +73,12 @@
 	class="group relative flex flex-row gap-1 p-2 hover:bg-gray-800"
 	oncontextmenu={openMenu}
 >
-	<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500">
+	<div
+		class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+		style="background-color: {getColor()};"
+	>
 		{message.profile.name[0]}
 	</div>
-	<!-- Menu com os ícones de acesso direto -->
 	<div
 		class="absolute top-1 right-8 flex items-center justify-center gap-1 rounded-md bg-gray-900 px-1 py-1 opacity-0 transition-opacity *:cursor-pointer *:rounded-sm *:p-1 *:transition group-hover:opacity-100 *:hover:bg-white/10 [&_svg]:transition-transform [&>*:hover>svg]:scale-110"
 	>
@@ -79,7 +94,6 @@
 			<Fa icon={faEllipsisH} />
 		</button>
 	</div>
-	<!-- Menu de contexto (clicando na ellipsis) -->
 	<ContextMenu bind:position={menuPosition}>
 		{#if onDelete}
 			<button onclick={onDelete} class="text-red-400">
