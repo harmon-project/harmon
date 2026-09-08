@@ -4,6 +4,6 @@
 	const { content }: { content: string } = $props();
 </script>
 
-<div class="prose prose-invert max-w-none wrap-break-word prose-a:text-blue-400">
+<div class="prose max-w-none wrap-break-word prose-invert prose-a:text-blue-400">
 	<SvelteMarkdown source={content} />
 </div>
