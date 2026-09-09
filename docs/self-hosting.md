@@ -10,7 +10,7 @@ You can generate a `PRIVATE_KEY` using the following command:
 docker run --rm heraclitoqsaldanha/harmon-server harmon-server generate-key
 ```
 
-You can also generate the `JWT_SECRET` and `JWT_CHALLENGE_SECRET` using the following command:
+You can also generate the `JWT_SECRET`, `JWT_CHALLENGE_SECRET` and `TURN_PASSWORD` using the following command:
 
 ```sh
 docker run --rm alpine/openssl rand -base64 32

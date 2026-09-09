@@ -17,6 +17,25 @@ services:
       - ./config.toml:/app/config.toml:ro
       - ./icon.png:/app/icon.png:ro
       - harmon:/app/data
+  coturn:
+    image: coturn/coturn:4.18.0-r0
+    container_name: coturn
+    restart: unless-stopped
+    networks:
+      - webnet
+    environment:
+      DETECT_EXTERNAL_IP: "yes"
+    command:
+      - --log-file=stdout
+      - --lt-cred-mech
+      - --user=${TURN_USERNAME}:${TURN_PASSWORD}
+      - --realm=${TURN_REALM}
+      - --min-port=49160
+      - --max-port=49200
+    ports:
+      - 3478:3478
+      - 3478:3478/udp
+      - 49160-49200:49160-49200/udp
   caddy:
     image: caddy:2.11.4
     container_name: caddy
