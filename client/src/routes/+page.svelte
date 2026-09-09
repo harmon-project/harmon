@@ -98,14 +98,14 @@
 	{/if}
 	{#if $servers.length == 0}
 		<div class="flex h-full w-full flex-col items-center justify-center gap-4">
-			<h1 class="text-2xl">Nenhum servidor adicionado</h1>
+			<h1 class="text-2xl">No servers added</h1>
 			<button
 				class="cursor-pointer rounded-md bg-gray-800 p-2 text-white"
 				onclick={() => {
 					showAddServerModal = true;
 				}}
 			>
-				Adicionar servidor
+				Add server
 			</button>
 		</div>
 	{:else if client}
@@ -145,7 +145,7 @@
 				}}
 			/>
 			<div class="flex h-full w-full flex-col items-center justify-center gap-4">
-				<h1 class="text-center text-2xl">Selecione um servidor</h1>
+				<h1 class="text-center text-2xl">Select a server</h1>
 			</div>
 		</div>
 	{/if}

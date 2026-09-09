@@ -69,7 +69,7 @@
 		<button
 			type="submit"
 			disabled={serverInfo == undefined}
-			class="w-full cursor-pointer rounded-md bg-gray-800 p-2 text-white">Adicionar</button
+			class="w-full cursor-pointer rounded-md bg-gray-800 p-2 text-white">Add</button
 		>
 	</form>
 </div>

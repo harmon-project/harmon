@@ -98,22 +98,22 @@
 		{#if onDelete}
 			<button onclick={onDelete} class="text-red-400">
 				<Fa icon={faTrash} />
-				Deletar
+				Delete
 			</button>
 		{/if}
 		{#if onEdit}
 			<button onclick={onEdit}>
 				<Fa icon={faPencil} />
-				Editar
+				Edit
 			</button>
 		{/if}
 		<button onclick={() => navigator.clipboard.writeText(message.content)}>
 			<Fa icon={faCopy} />
-			Copiar texto
+			Copy text
 		</button>
 		<button onclick={() => navigator.clipboard.writeText(message.id)}>
 			<Fa icon={faHashtag} />
-			Copiar id
+			Copy ID
 		</button>
 	</ContextMenu>
 	<div class="min-w-0 shrink">
