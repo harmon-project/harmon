@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            INSERT INTO roles\n                (id, name, permissions, created_at, updated_at)\n            VALUES\n                (?, ?, ?, ?, ?)\n            RETURNING\n                id as \"id!: Uuid\",\n                name,\n                permissions,\n                created_at as \"created_at!: time::OffsetDateTime\",\n                updated_at as \"updated_at!: time::OffsetDateTime\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: Uuid",
+        "ordinal": 0,
+        "type_info": "Blob"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "permissions",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at!: time::OffsetDateTime",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "updated_at!: time::OffsetDateTime",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "169c01e7afe8cedc8cb3915eb16fa869266ab35d81bdf57716f2d764a949b061"
+}
