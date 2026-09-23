@@ -2,21 +2,12 @@
 	import { goto } from "$app/navigation";
 	import { login } from "$lib/auth";
 	import InputWords from "$lib/components/inputWords.svelte";
+	import { englishWordlist as wordlist } from "harmon-lib/crypto";
 	import { keygen, mnemonicToSeed, generateMnemonic } from "harmon-lib/crypto";
 
 	const listSize = 12;
 
 	let words = $state<string[]>([]);
-
-	function onWordAdd(word: string) {
-		if (words.length <= listSize) {
-			words = [...words, word];
-		}
-	}
-
-	function onWordRemove(word: string) {
-		words = words.filter((w) => w !== word);
-	}
 
 	async function onSubmit() {
 		const seed = await mnemonicToSeed(words);
@@ -29,8 +20,8 @@
 <div class="flex h-screen w-screen items-center justify-center bg-gray-900 text-white">
 	<div>
 		<h1 class="mb-4 text-center text-2xl font-bold">Login</h1>
-		<div class="flex flex-col gap-4">
-			<InputWords {onWordAdd} {onWordRemove} {listSize} {words} />
+		<div class="flex max-w-md flex-col gap-4">
+			<InputWords {words} {wordlist} />
 			<input
 				type="button"
 				value="Generate"

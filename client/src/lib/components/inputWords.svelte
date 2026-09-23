@@ -1,17 +1,14 @@
 <script lang="ts">
 	import { clamp } from "$lib/utils";
-	import { englishWordlist as wordlist } from "harmon-lib/crypto";
 
 	const {
-		onWordAdd,
-		onWordRemove,
-		listSize = 12,
-		words
+		words = $bindable(),
+		wordlist,
+		disabled = false
 	}: {
-		onWordAdd?: (word: string) => void;
-		onWordRemove?: (word: string) => void;
-		listSize?: number;
 		words: string[];
+		wordlist: string[];
+		disabled?: boolean;
 	} = $props();
 
 	let input = $state("");
@@ -30,11 +27,33 @@
 		input = "";
 		selected = 0;
 
-		onWordAdd?.(word);
+		words.push(word);
+	}
+
+	function handlePaste(event: ClipboardEvent) {
+		event.preventDefault();
+
+		const pasted = event.clipboardData?.getData("text/plain") ?? "";
+		const parsed = pasted
+			.trim()
+			.toLowerCase()
+			.replace(/\n|\r|\t|,/g, " ")
+			.split(/\s+/)
+			.map((word) => word.trim())
+			.filter((word) => word.length > 0)
+			.filter((word) => wordlist.includes(word));
+
+		if (!parsed.length) return;
+
+		words.splice(0, words.length, ...parsed);
+
+		input = "";
+		selected = 0;
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === "Enter" && suggestions.length > 0 && words.length < listSize) {
+		if (event.key === "Enter" && suggestions.length > 0) {
+			event.preventDefault();
 			addSelected();
 			return;
 		}
@@ -52,33 +71,32 @@
 		}
 
 		if (event.key === "Backspace" && input === "") {
-			onWordRemove?.(words[words.length - 1]);
-			return;
-		}
-
-		if (words.length >= listSize) {
 			event.preventDefault();
+			words.pop();
+			return;
 		}
 	}
 </script>
 
-<div class="w-full max-w-md rounded-xl bg-gray-800 text-white">
+<div class="w-full rounded-xl bg-gray-800 text-white">
 	<div class="flex flex-wrap items-center gap-2 rounded-xl border p-3 shadow-sm">
 		{#each words as word}
 			<span class="rounded-lg bg-gray-700 px-2 py-1 text-sm text-blue-100">
 				{word}
 			</span>
 		{/each}
-
-		<input
-			bind:value={input}
-			onkeydown={handleKeydown}
-			class="min-w-30 flex-1 p-1 outline-none"
-			placeholder={words.length === 0 ? `Type the ${listSize} words...` : ""}
-		/>
+		{#if !disabled}
+			<input
+				bind:value={input}
+				onkeydown={handleKeydown}
+				onpaste={handlePaste}
+				class="min-w-30 flex-1 p-1 outline-none"
+				placeholder="Type the words..."
+			/>
+		{/if}
 	</div>
 
-	{#if suggestions.length && input && words.length < listSize}
+	{#if suggestions.length && input}
 		<div class="mt-2 max-h-40 overflow-auto rounded-xl border bg-zinc-900 shadow-sm">
 			{#each suggestions as suggestion, i}
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
