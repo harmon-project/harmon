@@ -54,7 +54,7 @@ pub async fn delete_message(pool: impl sqlx::SqliteExecutor<'_>, id: Uuid) -> er
 				profile_id as "profile_id!: Uuid",
 				content as "content!",
 				created_at as "created_at!: time::OffsetDateTime"
-		;"#,
+		"#,
 		id
 	)
 	.fetch_one(pool)
@@ -107,7 +107,7 @@ pub async fn get_message(pool: impl sqlx::SqliteExecutor<'_>, id: Uuid) -> error
 				messages
 			WHERE
 				id = ?1
-		;"#,
+		"#,
 		id
 	)
 	.fetch_one(pool)

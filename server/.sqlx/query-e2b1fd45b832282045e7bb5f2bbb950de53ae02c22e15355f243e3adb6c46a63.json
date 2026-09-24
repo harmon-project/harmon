@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tINSERT INTO channels\n\t\t\t\t(id, name, type, created_at)\n\t\t\tVALUES\n\t\t\t\t(?, ?, ?, ?)\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tname,\n\t\t\t\ttype as \"type: ChannelType\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t;",
+  "query": "\n\t\t\tDELETE FROM\n\t\t\t\tchannels\n\t\t\tWHERE\n\t\t\t\tid = ?\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tname,\n\t\t\t\ttype as \"type: ChannelType\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t",
   "describe": {
     "columns": [
       {
@@ -25,7 +25,7 @@
       }
     ],
     "parameters": {
-      "Right": 4
+      "Right": 1
     },
     "nullable": [
       false,
@@ -34,5 +34,5 @@
       false
     ]
   },
-  "hash": "5885adcccbbcaf18b854e9bd650d492fa9ab6892650f4934ca3dfdb103404102"
+  "hash": "e2b1fd45b832282045e7bb5f2bbb950de53ae02c22e15355f243e3adb6c46a63"
 }

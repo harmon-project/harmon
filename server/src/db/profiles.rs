@@ -13,7 +13,6 @@ pub struct Profile {
 
 pub async fn update_or_insert_profile(pool: &sqlx::sqlite::SqlitePool, public_key: crypto::PublicKey, name: &str) -> error::Result<Profile> {
 	let id = Uuid::now_v7();
-	let updated_at = time::OffsetDateTime::now_utc();
 	let created_at = time::OffsetDateTime::now_utc();
 
 	Ok(sqlx::query_as!(
@@ -22,8 +21,8 @@ pub async fn update_or_insert_profile(pool: &sqlx::sqlite::SqlitePool, public_ke
 			INSERT INTO profiles
 				(id, public_key, name, updated_at, created_at)
 			VALUES
-				(?, ?, ?, ?, ?)
-			ON CONFLICT(public_key) DO UPDATE SET
+				($1, $2, $3, $4, $4)
+			ON CONFLICT (public_key) DO UPDATE SET
 				name = excluded.name,
 				updated_at = excluded.updated_at
 			RETURNING
@@ -32,12 +31,10 @@ pub async fn update_or_insert_profile(pool: &sqlx::sqlite::SqlitePool, public_ke
 				name as "name!: String",
 				updated_at as "updated_at!: time::OffsetDateTime",
 				created_at as "created_at!: time::OffsetDateTime"
-			;
 		"#,
 		id,
 		public_key,
 		name,
-		updated_at,
 		created_at
 	)
 	.fetch_one(pool)
@@ -58,7 +55,6 @@ pub async fn get_profile(pool: impl sqlx::SqliteExecutor<'_>, id: Uuid) -> error
 				profiles
 			WHERE
 				id = ?
-			;
 		"#,
 		id
 	)
@@ -80,7 +76,6 @@ pub async fn get_profile_by_public_key(pool: impl sqlx::SqliteExecutor<'_>, publ
 				profiles
 			WHERE
 				public_key = ?
-			;
 		"#,
 		public_key
 	)
