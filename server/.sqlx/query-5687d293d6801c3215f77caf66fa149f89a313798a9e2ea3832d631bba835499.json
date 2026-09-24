@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tSELECT\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tchannel_id as \"channel_id!: Uuid\",\n\t\t\t\tcontent as \"content!\",\n\t\t\t\tprofile_id as \"profile_id!: Uuid\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t\tFROM\n\t\t\t\tmessages\n\t\t\tWHERE\n\t\t\t\tid = ?1\n\t\t;",
+  "query": "\n\t\t\tDELETE FROM\n\t\t\t\tmessages\n\t\t\tWHERE\n\t\t\t\tid = ?\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tchannel_id as \"channel_id!: Uuid\",\n\t\t\t\tprofile_id as \"profile_id!: Uuid\",\n\t\t\t\tcontent as \"content!\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t",
   "describe": {
     "columns": [
       {
@@ -14,14 +14,14 @@
         "type_info": "Blob"
       },
       {
-        "name": "content!",
+        "name": "profile_id!: Uuid",
         "ordinal": 2,
-        "type_info": "Text"
+        "type_info": "Blob"
       },
       {
-        "name": "profile_id!: Uuid",
+        "name": "content!",
         "ordinal": 3,
-        "type_info": "Blob"
+        "type_info": "Text"
       },
       {
         "name": "created_at!: time::OffsetDateTime",
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "cf7357de3fb8e04a79b4151d9e4cc460cbd771ec79b6d7f5ec3f0f4d4d67edf1"
+  "hash": "5687d293d6801c3215f77caf66fa149f89a313798a9e2ea3832d631bba835499"
 }

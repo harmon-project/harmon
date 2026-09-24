@@ -1,5 +1,3 @@
-use sqlx::query_as;
-
 use crate::*;
 
 use uuid::Uuid;
@@ -16,15 +14,14 @@ pub struct Role {
 pub async fn create_role(pool: impl sqlx::SqliteExecutor<'_>, name: &str, permissions: i64) -> error::Result<Role> {
 	let id = Uuid::now_v7();
 	let created_at = time::OffsetDateTime::now_utc();
-	let updated_at = time::OffsetDateTime::now_utc();
 
-	Ok(query_as!(
+	Ok(sqlx::query_as!(
 		Role,
 		r#"
             INSERT INTO roles
                 (id, name, permissions, created_at, updated_at)
             VALUES
-                (?, ?, ?, ?, ?)
+                ($1, $2, $3, $4, $4)
             RETURNING
                 id as "id!: Uuid",
                 name,
@@ -35,8 +32,7 @@ pub async fn create_role(pool: impl sqlx::SqliteExecutor<'_>, name: &str, permis
 		id,
 		name,
 		permissions,
-		created_at,
-		updated_at
+		created_at
 	)
 	.fetch_one(pool)
 	.await?)

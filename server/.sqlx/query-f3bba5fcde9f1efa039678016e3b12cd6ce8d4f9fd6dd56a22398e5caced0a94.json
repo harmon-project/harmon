@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tINSERT INTO profiles\n\t\t\t\t(id, public_key, name, updated_at, created_at)\n\t\t\tVALUES\n\t\t\t\t(?, ?, ?, ?, ?)\n\t\t\tON CONFLICT(public_key) DO UPDATE SET\n\t\t\t\tname = excluded.name,\n\t\t\t\tupdated_at = excluded.updated_at\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tpublic_key as \"public_key!: crypto::PublicKey\",\n\t\t\t\tname as \"name!: String\",\n\t\t\t\tupdated_at as \"updated_at!: time::OffsetDateTime\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t\t;\n\t\t",
+  "query": "\n\t\t\tINSERT INTO profiles\n\t\t\t\t(id, public_key, name, updated_at, created_at)\n\t\t\tVALUES\n\t\t\t\t($1, $2, $3, $4, $4)\n\t\t\tON CONFLICT (public_key) DO UPDATE SET\n\t\t\t\tname = excluded.name,\n\t\t\t\tupdated_at = excluded.updated_at\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tpublic_key as \"public_key!: crypto::PublicKey\",\n\t\t\t\tname as \"name!: String\",\n\t\t\t\tupdated_at as \"updated_at!: time::OffsetDateTime\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t",
   "describe": {
     "columns": [
       {
@@ -30,7 +30,7 @@
       }
     ],
     "parameters": {
-      "Right": 5
+      "Right": 4
     },
     "nullable": [
       false,
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "6278deddc9892a6283640585cad03d1a2a7818691284afbeec59911344f40ba5"
+  "hash": "f3bba5fcde9f1efa039678016e3b12cd6ce8d4f9fd6dd56a22398e5caced0a94"
 }
