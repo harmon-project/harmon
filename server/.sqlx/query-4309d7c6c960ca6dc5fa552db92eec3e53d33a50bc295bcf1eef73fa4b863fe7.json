@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tUPDATE\n\t\t\t\tfiles\n\t\t\tSET\n\t\t\t\tcounter = counter - 1\n\t\t\tWHERE\n\t\t\t\tid = ?\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tname,\n\t\t\t\thash as \"hash!: crypto::Hash32\",\n\t\t\t\tsize,\n\t\t\t\tmime_type,\n\t\t\t\tcounter,\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t;",
+  "query": "\n\t\t\tSELECT\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tname,\n\t\t\thash as \"hash!: crypto::Hash32\",\n\t\t\t\tsize,\n\t\t\t\tmime_type,\n\t\t\t\tcounter,\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t\tFROM \n\t\t\t\tfiles\n\t\t\tWHERE\n\t\t\t\tid = ?\n\t\t",
   "describe": {
     "columns": [
       {
@@ -52,5 +52,5 @@
       false
     ]
   },
-  "hash": "796b2443198c28cccd5d9fbe2b679c426ba9c908d2592ff4ce7e428ecf2318e9"
+  "hash": "4309d7c6c960ca6dc5fa552db92eec3e53d33a50bc295bcf1eef73fa4b863fe7"
 }

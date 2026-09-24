@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tUPDATE\n\t\t\t\tfiles\n\t\t\tSET\n\t\t\t\tcounter = counter + 1\n\t\t\tWHERE\n\t\t\t\tid = ?\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tname,\n\t\t\t\thash as \"hash!: crypto::Hash32\",\n\t\t\t\tsize,\n\t\t\t\tmime_type,\n\t\t\t\tcounter,\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t;",
+  "query": "\n\t\tSELECT\n\t\t\tfile.id as \"id!: Uuid\",\n\t\t\tfile.name,\n\t\t\tfile.hash as \"hash!: crypto::Hash32\",\n\t\t\tfile.size,\n\t\t\tfile.mime_type,\n\t\t\tfile.counter,\n\t\t\tfile.created_at as \"created_at!: time::OffsetDateTime\"\n\t\tFROM\n\t\t\tfiles file\n\t\tINNER JOIN attachments\n\t\t\tattachment\n\t\tON\n\t\t\tattachment.file_id = file.id\n\t\tWHERE\n\t\t\tattachment.message_id = ?\n\t\t",
   "describe": {
     "columns": [
       {
@@ -52,5 +52,5 @@
       false
     ]
   },
-  "hash": "23a4fb6508041e4147452880b456ed9aef96d36287f6277b34bb9d0fbefe9595"
+  "hash": "bfe80c54978ddd113fde4065e25875785e7624d08d37f42aaa769a702288d0e2"
 }

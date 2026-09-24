@@ -32,7 +32,7 @@ pub async fn create_file(pool: impl sqlx::SqliteExecutor<'_>, name: &str, hash: 
 				mime_type,
 				counter,
 				created_at as "created_at!: time::OffsetDateTime"
-		;"#,
+		"#,
 		id,
 		name,
 		hash,
@@ -60,7 +60,7 @@ pub async fn get_file(pool: impl sqlx::SqliteExecutor<'_>, id: Uuid) -> error::R
 				files
 			WHERE
 				id = ?
-		;"#,
+		"#,
 		id
 	)
 	.fetch_one(pool)
@@ -83,7 +83,7 @@ pub async fn get_file_by_hash(pool: impl sqlx::SqliteExecutor<'_>, hash: crypto:
 				files
 			WHERE
 				hash = ?
-		;"#,
+		"#,
 		hash
 	)
 	.fetch_one(pool)
@@ -108,7 +108,7 @@ pub async fn increment_file_counter(pool: impl sqlx::SqliteExecutor<'_>, id: Uui
 				mime_type,
 				counter,
 				created_at as "created_at!: time::OffsetDateTime"
-		;"#,
+		"#,
 		id
 	)
 	.fetch_one(pool)
@@ -133,7 +133,7 @@ pub async fn decrement_file_counter(pool: impl sqlx::SqliteExecutor<'_>, id: Uui
 				mime_type,
 				counter,
 				created_at as "created_at!: time::OffsetDateTime"
-		;"#,
+		"#,
 		id
 	)
 	.fetch_one(pool)
@@ -160,7 +160,7 @@ pub async fn get_files_from_message(pool: impl sqlx::SqliteExecutor<'_>, message
 			attachment.file_id = file.id
 		WHERE
 			attachment.message_id = ?
-		;"#,
+		"#,
 		message_id
 	)
 	.fetch_all(pool)
@@ -185,7 +185,7 @@ pub async fn delete_unreferenced_files(pool: impl sqlx::SqliteExecutor<'_>, date
 			mime_type,
 			counter,
 			created_at as "created_at!: time::OffsetDateTime"
-		;"#,
+		"#,
 		date
 	)
 	.fetch_all(pool)

@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tSELECT\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tpublic_key as \"public_key!: crypto::PublicKey\",\n\t\t\t\tname as \"name!: String\",\n\t\t\t\tupdated_at as \"updated_at!: time::OffsetDateTime\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t\tFROM\n\t\t\t\tprofiles\n\t\t\tWHERE\n\t\t\t\tid = ?\n\t\t\t;\n\t\t",
+  "query": "\n\t\t\tSELECT\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tchannel_id as \"channel_id!: Uuid\",\n\t\t\t\tcontent as \"content!\",\n\t\t\t\tprofile_id as \"profile_id!: Uuid\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\"\n\t\t\tFROM\n\t\t\t\tmessages\n\t\t\tWHERE\n\t\t\t\tid = ?1\n\t\t",
   "describe": {
     "columns": [
       {
@@ -9,19 +9,19 @@
         "type_info": "Blob"
       },
       {
-        "name": "public_key!: crypto::PublicKey",
+        "name": "channel_id!: Uuid",
         "ordinal": 1,
         "type_info": "Blob"
       },
       {
-        "name": "name!: String",
+        "name": "content!",
         "ordinal": 2,
         "type_info": "Text"
       },
       {
-        "name": "updated_at!: time::OffsetDateTime",
+        "name": "profile_id!: Uuid",
         "ordinal": 3,
-        "type_info": "Text"
+        "type_info": "Blob"
       },
       {
         "name": "created_at!: time::OffsetDateTime",
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "c1b11b67391d3c802571cc6543af3db31ff58eef5cdef84080e627ef3eb51c5b"
+  "hash": "bd6be2e068c1248348561cdf911c8aecc658c1b1788975ddba16559bac462758"
 }
