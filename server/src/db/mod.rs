@@ -1,9 +1,11 @@
 use crate::*;
 
 mod attachments;
+mod channel_role_permissions;
 mod channels;
 mod files;
 mod messages;
+mod profile_roles;
 mod profiles;
 mod roles;
 

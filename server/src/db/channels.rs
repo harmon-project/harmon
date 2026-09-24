@@ -33,7 +33,7 @@ pub async fn create_channel(pool: &sqlx::sqlite::SqlitePool, name: &str, r#type:
 				name,
 				type as "type: ChannelType",
 				created_at as "created_at!: time::OffsetDateTime"
-		;"#,
+		"#,
 		id,
 		name,
 		r#type,
@@ -56,7 +56,7 @@ pub async fn delete_channel(pool: &sqlx::sqlite::SqlitePool, id: Uuid) -> error:
 				name,
 				type as "type: ChannelType",
 				created_at as "created_at!: time::OffsetDateTime"
-		;"#,
+		"#,
 		id
 	)
 	.fetch_one(pool)
@@ -76,7 +76,7 @@ pub async fn get_channels(pool: &sqlx::sqlite::SqlitePool) -> error::Result<Vec<
 				channels
 			ORDER BY
 				id ASC
-		;"#,
+		"#,
 	)
 	.fetch_all(pool)
 	.await?)
@@ -95,7 +95,7 @@ pub async fn get_channel(pool: &sqlx::sqlite::SqlitePool, id: Uuid) -> error::Re
 				channels
 			WHERE
 				id = ?
-		;"#,
+		"#,
 		id,
 	)
 	.fetch_one(pool)

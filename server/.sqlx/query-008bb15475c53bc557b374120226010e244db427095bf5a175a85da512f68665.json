@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "\n\t\t\tINSERT INTO channel_role_permissions\n\t\t\t\t(id, channel_id, role_id, permissions, created_at, updated_at)\n\t\t\tVALUES\n\t\t\t\t($1, $2, $3, $4, $5, $5)\n\t\t\tON CONFLICT (channel_id, role_id) DO UPDATE SET\n\t\t\t\tpermissions = excluded.permissions,\n\t\t\t\tupdated_at = excluded.updated_at\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tchannel_id as \"channel_id!: Uuid\",\n                role_id as \"role_id!: Uuid\",\n\t\t\t\tpermissions as \"permissions!: u32\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\",\n                updated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: Uuid",
+        "ordinal": 0,
+        "type_info": "Blob"
+      },
+      {
+        "name": "channel_id!: Uuid",
+        "ordinal": 1,
+        "type_info": "Blob"
+      },
+      {
+        "name": "role_id!: Uuid",
+        "ordinal": 2,
+        "type_info": "Blob"
+      },
+      {
+        "name": "permissions!: u32",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at!: time::OffsetDateTime",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "updated_at!: time::OffsetDateTime",
+        "ordinal": 5,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "008bb15475c53bc557b374120226010e244db427095bf5a175a85da512f68665"
+}

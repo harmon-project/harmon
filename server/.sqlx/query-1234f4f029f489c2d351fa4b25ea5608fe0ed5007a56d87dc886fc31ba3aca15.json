@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n            INSERT INTO roles\n                (id, name, permissions, created_at, updated_at)\n            VALUES\n                (?, ?, ?, ?, ?)\n            RETURNING\n                id as \"id!: Uuid\",\n                name,\n                permissions,\n                created_at as \"created_at!: time::OffsetDateTime\",\n                updated_at as \"updated_at!: time::OffsetDateTime\"\n        ",
+  "query": "\n            INSERT INTO roles\n                (id, name, permissions, created_at, updated_at)\n            VALUES\n                ($1, $2, $3, $4, $4)\n            RETURNING\n                id as \"id!: Uuid\",\n                name,\n                permissions,\n                created_at as \"created_at!: time::OffsetDateTime\",\n                updated_at as \"updated_at!: time::OffsetDateTime\"\n        ",
   "describe": {
     "columns": [
       {
@@ -30,7 +30,7 @@
       }
     ],
     "parameters": {
-      "Right": 5
+      "Right": 4
     },
     "nullable": [
       false,
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "169c01e7afe8cedc8cb3915eb16fa869266ab35d81bdf57716f2d764a949b061"
+  "hash": "1234f4f029f489c2d351fa4b25ea5608fe0ed5007a56d87dc886fc31ba3aca15"
 }
