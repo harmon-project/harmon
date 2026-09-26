@@ -12,6 +12,7 @@
 	import Fa from "svelte-fa";
 	import ContextMenu from "$lib/components/contextMenu.svelte";
 	import Markdown from "$lib/components/markdown.svelte";
+	import Profile from "$lib/components/profile.svelte";
 
 	type MessageParams = {
 		url: string;
@@ -23,6 +24,12 @@
 	const { url, message, onEdit, onDelete }: MessageParams = $props();
 
 	let menuPosition = $state<{ x: number; y: number } | null>(null);
+	let profilePosition = $state<{ x: number; y: number } | null>(null);
+
+	function openProfile(event: MouseEvent) {
+		event.preventDefault();
+		profilePosition = { x: event.clientX + 8, y: event.clientY + 8 };
+	}
 
 	function openMenu(event: MouseEvent) {
 		event.preventDefault();
@@ -73,17 +80,21 @@
 	class="group relative flex flex-row gap-1 p-2 hover:bg-gray-800"
 	oncontextmenu={openMenu}
 >
-	<div
-		class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+	<button
+		type="button"
+		onclick={openProfile}
+		class="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full"
 		style="background-color: {getColor()};"
 	>
 		{message.profile.name[0]}
-	</div>
+	</button>
 	<div
 		class="absolute top-1 right-8 flex items-center justify-center gap-1 rounded-md bg-gray-900 px-1 py-1 opacity-0 transition-opacity *:cursor-pointer *:rounded-sm *:p-1 *:transition group-hover:opacity-100 *:hover:bg-white/10 [&_svg]:transition-transform [&>*:hover>svg]:scale-110"
 	>
 		{#if onEdit}
-			<button> <Fa icon={faPencil} /> </button>
+			<button>
+				<Fa icon={faPencil} />
+			</button>
 		{/if}
 		{#if onDelete}
 			<button onclick={onDelete} class="text-red-400">
@@ -118,7 +129,15 @@
 	</ContextMenu>
 	<div class="min-w-0 shrink">
 		<div class="flex gap-2">
-			<p class="text-1xl text-gray-1 00 font-extrabold">{message.profile.name}</p>
+			<button
+				type="button"
+				aria-haspopup="dialog"
+				aria-expanded={profilePosition !== null}
+				onclick={openProfile}
+				class="cursor-pointer text-left font-extrabold hover:underline"
+			>
+				{message.profile.name}
+			</button>
 			<p class="text-sm text-gray-400">{formatDate(message.created_at)}</p>
 		</div>
 		<Markdown content={message.content} />
@@ -166,3 +185,12 @@
 		</div>
 	</div>
 </div>
+
+{#if profilePosition}
+	<Profile
+		profile={message.profile}
+		color={getColor()}
+		position={profilePosition}
+		onClose={() => (profilePosition = null)}
+	/>
+{/if}
