@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tDELETE FROM\n\t\t\t\tchannel_role_permissions\n\t\t\tWHERE\n\t\t\t\tid = $1\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tchannel_id as \"channel_id!: Uuid\",\n                role_id as \"role_id!: Uuid\",\n\t\t\t\tpermissions as \"permissions!: u32\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\",\n                updated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t",
+  "query": "\n\t\t\tINSERT INTO channel_role_permissions\n\t\t\t\t(id, channel_id, role_id, permissions, created_at, updated_at)\n\t\t\tVALUES\n\t\t\t\t($1, $2, $3, $4, $5, $5)\n\t\t\tON CONFLICT (channel_id, role_id) DO UPDATE SET\n\t\t\t\tpermissions = excluded.permissions,\n\t\t\t\tupdated_at = excluded.updated_at\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tchannel_id as \"channel_id!: Uuid\",\n                role_id as \"role_id!: Uuid\",\n\t\t\t\tpermissions as \"permissions!: i32\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\",\n                updated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t",
   "describe": {
     "columns": [
       {
@@ -19,7 +19,7 @@
         "type_info": "Blob"
       },
       {
-        "name": "permissions!: u32",
+        "name": "permissions!: i32",
         "ordinal": 3,
         "type_info": "Integer"
       },
@@ -35,7 +35,7 @@
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 5
     },
     "nullable": [
       false,
@@ -46,5 +46,5 @@
       false
     ]
   },
-  "hash": "6e4c30593baaab82000a675862cdcc0467814fabb432b3463a6e80ce1c056c38"
+  "hash": "0715be9728166815b8eb32a027d3531392f729ea86f5c2c0e5e38d86b4baa55a"
 }

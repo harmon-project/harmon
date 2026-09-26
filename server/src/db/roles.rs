@@ -37,3 +37,26 @@ pub async fn create_role(pool: impl sqlx::SqliteExecutor<'_>, name: &str, permis
 	.fetch_one(pool)
 	.await?)
 }
+
+pub async fn get_roles_from_profile(pool: impl sqlx::SqliteExecutor<'_>, profile_id: Uuid) -> error::Result<Vec<Role>> {
+	Ok(sqlx::query_as!(
+		Role,
+		r#"
+			SELECT
+				roles.id as "id!: Uuid",
+				roles.name,
+				roles.permissions,
+				roles.created_at as "created_at!: time::OffsetDateTime",
+				roles.updated_at as "updated_at!: time::OffsetDateTime"
+			FROM
+				roles
+			INNER JOIN
+				profile_roles ON profile_roles.role_id = roles.id
+			WHERE
+				profile_roles.profile_id = $1
+		"#,
+		profile_id,
+	)
+	.fetch_all(pool)
+	.await?)
+}

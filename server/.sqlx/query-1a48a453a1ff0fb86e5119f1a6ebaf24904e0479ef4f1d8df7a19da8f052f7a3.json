@@ -1,0 +1,50 @@
+{
+  "db_name": "SQLite",
+  "query": "\n\t\t\tSELECT\n\t\t\t\tchannel_role_permissions.id as \"id!: Uuid\",\n\t\t\t\tchannel_role_permissions.channel_id as \"channel_id!: Uuid\",\n\t\t\t\tchannel_role_permissions.role_id as \"role_id!: Uuid\",\n\t\t\t\tchannel_role_permissions.permissions as \"permissions!: i32\",\n\t\t\t\tchannel_role_permissions.created_at as \"created_at!: time::OffsetDateTime\",\n\t\t\t\tchannel_role_permissions.updated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t\tFROM\n\t\t\t\tchannel_role_permissions\n\t\t\tINNER JOIN\n\t\t\t\tprofile_roles ON profile_roles.role_id = channel_role_permissions.role_id\n\t\t\tWHERE\n\t\t\t\tchannel_role_permissions.channel_id = $1\n\t\t\t\tAND\n\t\t\t\tprofile_roles.profile_id = $2\n\t\t",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: Uuid",
+        "ordinal": 0,
+        "type_info": "Blob"
+      },
+      {
+        "name": "channel_id!: Uuid",
+        "ordinal": 1,
+        "type_info": "Blob"
+      },
+      {
+        "name": "role_id!: Uuid",
+        "ordinal": 2,
+        "type_info": "Blob"
+      },
+      {
+        "name": "permissions!: i32",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at!: time::OffsetDateTime",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "updated_at!: time::OffsetDateTime",
+        "ordinal": 5,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1a48a453a1ff0fb86e5119f1a6ebaf24904e0479ef4f1d8df7a19da8f052f7a3"
+}

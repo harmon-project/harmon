@@ -10,9 +10,11 @@ mod profiles;
 mod roles;
 
 pub use attachments::*;
+pub use channel_role_permissions::*;
 pub use channels::*;
 pub use files::*;
 pub use messages::*;
+pub use profile_roles::*;
 pub use profiles::*;
 pub use roles::*;
 

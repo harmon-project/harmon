@@ -11,7 +11,7 @@ pub struct Profile {
 	pub created_at: time::OffsetDateTime,
 }
 
-pub async fn update_or_insert_profile(pool: &sqlx::sqlite::SqlitePool, public_key: crypto::PublicKey, name: &str) -> error::Result<Profile> {
+pub async fn update_or_insert_profile(pool: impl sqlx::SqliteExecutor<'_>, public_key: crypto::PublicKey, name: &str) -> error::Result<Profile> {
 	let id = Uuid::now_v7();
 	let created_at = time::OffsetDateTime::now_utc();
 
