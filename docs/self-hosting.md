@@ -1,3 +1,5 @@
+# harmon-selfhosting
+
 ### Docker
 
 You can see the [server example](./self-hosting-example/) for reference.

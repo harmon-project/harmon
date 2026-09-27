@@ -13,6 +13,8 @@
 
 ### documentation
 
+[architecture](architecture.md)
+
 [self hosting](self-hosting.md)
 
 ### development
