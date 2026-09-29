@@ -37,6 +37,7 @@ sha2 = "0.11.0"
 jsonwebtoken = "9.3.1"
 wspc = "0.5.0"
 pkarr = { version = "8.0.0", features = ["reqwest-builder"] }
+bitflags = "2.13.2"
 
 [profile.release]
 opt-level = "z"
