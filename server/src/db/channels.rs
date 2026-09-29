@@ -17,7 +17,7 @@ pub struct Channel {
 	pub created_at: time::OffsetDateTime,
 }
 
-pub async fn create_channel(pool: &sqlx::sqlite::SqlitePool, name: &str, r#type: ChannelType) -> error::Result<Channel> {
+pub async fn create_channel(pool: impl sqlx::SqliteExecutor<'_>, name: &str, r#type: ChannelType) -> error::Result<Channel> {
 	let id = Uuid::now_v7();
 	let created_at = time::OffsetDateTime::now_utc();
 
@@ -43,7 +43,7 @@ pub async fn create_channel(pool: &sqlx::sqlite::SqlitePool, name: &str, r#type:
 	.await?)
 }
 
-pub async fn delete_channel(pool: &sqlx::sqlite::SqlitePool, id: Uuid) -> error::Result<Channel> {
+pub async fn delete_channel(pool: impl sqlx::SqliteExecutor<'_>, id: Uuid) -> error::Result<Channel> {
 	Ok(sqlx::query_as!(
 		Channel,
 		r#"
@@ -63,7 +63,7 @@ pub async fn delete_channel(pool: &sqlx::sqlite::SqlitePool, id: Uuid) -> error:
 	.await?)
 }
 
-pub async fn get_channels(pool: &sqlx::sqlite::SqlitePool) -> error::Result<Vec<Channel>> {
+pub async fn get_channels(pool: impl sqlx::SqliteExecutor<'_>) -> error::Result<Vec<Channel>> {
 	Ok(sqlx::query_as!(
 		Channel,
 		r#"
@@ -82,7 +82,7 @@ pub async fn get_channels(pool: &sqlx::sqlite::SqlitePool) -> error::Result<Vec<
 	.await?)
 }
 
-pub async fn get_channel(pool: &sqlx::sqlite::SqlitePool, id: Uuid) -> error::Result<Channel> {
+pub async fn get_channel(pool: impl sqlx::SqliteExecutor<'_>, id: Uuid) -> error::Result<Channel> {
 	Ok(sqlx::query_as!(
 		Channel,
 		r#"

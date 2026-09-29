@@ -1,17 +1,18 @@
 use crate::*;
 
+use permissions::GlobalPermissions;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct Role {
 	pub id: Uuid,
 	pub name: String,
-	pub permissions: i64,
+	pub permissions: GlobalPermissions,
 	pub created_at: time::OffsetDateTime,
 	pub updated_at: time::OffsetDateTime,
 }
 
-pub async fn create_role(pool: impl sqlx::SqliteExecutor<'_>, name: &str, permissions: i64) -> error::Result<Role> {
+pub async fn create_role(pool: impl sqlx::SqliteExecutor<'_>, name: &str, permissions: GlobalPermissions) -> error::Result<Role> {
 	let id = Uuid::now_v7();
 	let created_at = time::OffsetDateTime::now_utc();
 
@@ -25,7 +26,7 @@ pub async fn create_role(pool: impl sqlx::SqliteExecutor<'_>, name: &str, permis
             RETURNING
                 id as "id!: Uuid",
                 name,
-                permissions,
+                permissions as "permissions!: GlobalPermissions",
                 created_at as "created_at!: time::OffsetDateTime",
                 updated_at as "updated_at!: time::OffsetDateTime"
         "#,
@@ -35,5 +36,28 @@ pub async fn create_role(pool: impl sqlx::SqliteExecutor<'_>, name: &str, permis
 		created_at
 	)
 	.fetch_one(pool)
+	.await?)
+}
+
+pub async fn get_roles_from_profile(pool: impl sqlx::SqliteExecutor<'_>, profile_id: Uuid) -> error::Result<Vec<Role>> {
+	Ok(sqlx::query_as!(
+		Role,
+		r#"
+			SELECT
+				roles.id as "id!: Uuid",
+				roles.name,
+				roles.permissions as "permissions!: GlobalPermissions",
+				roles.created_at as "created_at!: time::OffsetDateTime",
+				roles.updated_at as "updated_at!: time::OffsetDateTime"
+			FROM
+				roles
+			INNER JOIN
+				profile_roles ON profile_roles.role_id = roles.id
+			WHERE
+				profile_roles.profile_id = $1
+		"#,
+		profile_id,
+	)
+	.fetch_all(pool)
 	.await?)
 }

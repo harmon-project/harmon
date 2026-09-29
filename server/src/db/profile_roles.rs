@@ -10,7 +10,7 @@ pub struct ProfileRole {
 	pub created_at: time::OffsetDateTime,
 }
 
-pub async fn insert_profile_role(pool: &sqlx::sqlite::SqlitePool, profile_id: Uuid, role_id: Uuid) -> error::Result<ProfileRole> {
+pub async fn insert_profile_role(pool: impl sqlx::SqliteExecutor<'_>, profile_id: Uuid, role_id: Uuid) -> error::Result<ProfileRole> {
 	let id = Uuid::now_v7();
 	let created_at = time::OffsetDateTime::now_utc();
 
@@ -36,7 +36,7 @@ pub async fn insert_profile_role(pool: &sqlx::sqlite::SqlitePool, profile_id: Uu
 	.await?)
 }
 
-pub async fn delete_profile_role(pool: &sqlx::sqlite::SqlitePool, id: Uuid) -> error::Result<ProfileRole> {
+pub async fn delete_profile_role(pool: impl sqlx::SqliteExecutor<'_>, id: Uuid) -> error::Result<ProfileRole> {
 	Ok(sqlx::query_as!(
 		ProfileRole,
 		r#"

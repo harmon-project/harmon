@@ -1,5 +1,6 @@
 use crate::*;
 
+use permissions::ChannelPermissions;
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -7,12 +8,39 @@ pub struct ChannelRolePermission {
 	pub id: Uuid,
 	pub channel_id: Uuid,
 	pub role_id: Uuid,
-	pub permissions: i32,
+	pub permissions: ChannelPermissions,
 	pub created_at: time::OffsetDateTime,
 	pub updated_at: time::OffsetDateTime,
 }
 
-pub async fn update_or_insert_channel_role_permission(pool: &sqlx::sqlite::SqlitePool, channel_id: Uuid, role_id: Uuid, permissions: i32) -> error::Result<ChannelRolePermission> {
+pub async fn get_channel_role_permissions_from_profile(pool: impl sqlx::SqliteExecutor<'_>, channel_id: Uuid, profile_id: Uuid) -> error::Result<Vec<ChannelRolePermission>> {
+	Ok(sqlx::query_as!(
+		ChannelRolePermission,
+		r#"
+			SELECT
+				channel_role_permissions.id as "id!: Uuid",
+				channel_role_permissions.channel_id as "channel_id!: Uuid",
+				channel_role_permissions.role_id as "role_id!: Uuid",
+				channel_role_permissions.permissions as "permissions!: ChannelPermissions",
+				channel_role_permissions.created_at as "created_at!: time::OffsetDateTime",
+				channel_role_permissions.updated_at as "updated_at!: time::OffsetDateTime"
+			FROM
+				channel_role_permissions
+			INNER JOIN
+				profile_roles ON profile_roles.role_id = channel_role_permissions.role_id
+			WHERE
+				channel_role_permissions.channel_id = $1
+				AND
+				profile_roles.profile_id = $2
+		"#,
+		channel_id,
+		profile_id,
+	)
+	.fetch_all(pool)
+	.await?)
+}
+
+pub async fn update_or_insert_channel_role_permission(pool: impl sqlx::SqliteExecutor<'_>, channel_id: Uuid, role_id: Uuid, permissions: ChannelPermissions) -> error::Result<ChannelRolePermission> {
 	let id = Uuid::now_v7();
 	let created_at = time::OffsetDateTime::now_utc();
 
@@ -30,7 +58,7 @@ pub async fn update_or_insert_channel_role_permission(pool: &sqlx::sqlite::Sqlit
 				id as "id!: Uuid",
 				channel_id as "channel_id!: Uuid",
                 role_id as "role_id!: Uuid",
-				permissions as "permissions!: i32",
+				permissions as "permissions!: ChannelPermissions",
 				created_at as "created_at!: time::OffsetDateTime",
                 updated_at as "updated_at!: time::OffsetDateTime"
 		"#,
@@ -44,7 +72,7 @@ pub async fn update_or_insert_channel_role_permission(pool: &sqlx::sqlite::Sqlit
 	.await?)
 }
 
-pub async fn delete_channel_role_permission(pool: &sqlx::sqlite::SqlitePool, id: Uuid) -> error::Result<ChannelRolePermission> {
+pub async fn delete_channel_role_permission(pool: impl sqlx::SqliteExecutor<'_>, id: Uuid) -> error::Result<ChannelRolePermission> {
 	Ok(sqlx::query_as!(
 		ChannelRolePermission,
 		r#"
@@ -56,7 +84,7 @@ pub async fn delete_channel_role_permission(pool: &sqlx::sqlite::SqlitePool, id:
 				id as "id!: Uuid",
 				channel_id as "channel_id!: Uuid",
                 role_id as "role_id!: Uuid",
-				permissions as "permissions!: i32",
+				permissions as "permissions!: ChannelPermissions",
 				created_at as "created_at!: time::OffsetDateTime",
                 updated_at as "updated_at!: time::OffsetDateTime"
 		"#,
