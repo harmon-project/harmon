@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "\n\t\t\tDELETE FROM\n\t\t\t\troles\n\t\t\tWHERE\n\t\t\t\tid = $1\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tname,\n\t\t\t\tpermissions as \"permissions!: GlobalPermissions\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\",\n\t\t\t\tupdated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: Uuid",
+        "ordinal": 0,
+        "type_info": "Blob"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "permissions!: GlobalPermissions",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at!: time::OffsetDateTime",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "updated_at!: time::OffsetDateTime",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a1849e22708e431aab13c04e32af08451197ae4d105c9cc3f525369f6833c5b9"
+}
