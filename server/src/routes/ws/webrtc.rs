@@ -41,10 +41,6 @@ pub struct SendEventParams {
 pub async fn send_event(app: wspc::App, socket: wspc::Socket, params: wspc::Params<SendEventParams>) -> error::Result<()> {
 	let state = app.get_state::<app::AppState>().unwrap();
 
-	if !auth::is_auth(&socket) {
-		return Err(error::Error::Unauthorized);
-	}
-
 	let Some(channel_id) = socket.get_state::<channel::ChannelIdentifier>() else {
 		return Err(error::Error::NotInChannel);
 	};
