@@ -39,6 +39,27 @@ pub async fn create_role(pool: impl sqlx::SqliteExecutor<'_>, name: &str, permis
 	.await?)
 }
 
+pub async fn delete_role(pool: impl sqlx::SqliteExecutor<'_>, role_id: Uuid) -> error::Result<Role> {
+	Ok(sqlx::query_as!(
+		Role,
+		r#"
+			DELETE FROM
+				roles
+			WHERE
+				id = $1
+			RETURNING
+				id as "id!: Uuid",
+				name,
+				permissions as "permissions!: GlobalPermissions",
+				created_at as "created_at!: time::OffsetDateTime",
+				updated_at as "updated_at!: time::OffsetDateTime"
+		"#,
+		role_id
+	)
+	.fetch_one(pool)
+	.await?)
+}
+
 pub async fn get_roles_from_profile(pool: impl sqlx::SqliteExecutor<'_>, profile_id: Uuid) -> error::Result<Vec<Role>> {
 	Ok(sqlx::query_as!(
 		Role,
@@ -57,6 +78,24 @@ pub async fn get_roles_from_profile(pool: impl sqlx::SqliteExecutor<'_>, profile
 				profile_roles.profile_id = $1
 		"#,
 		profile_id,
+	)
+	.fetch_all(pool)
+	.await?)
+}
+
+pub async fn get_roles(pool: impl sqlx::SqliteExecutor<'_>) -> error::Result<Vec<Role>> {
+	Ok(sqlx::query_as!(
+		Role,
+		r#"
+			SELECT
+				id as "id!: Uuid",
+				name,
+				permissions as "permissions!: GlobalPermissions",
+				created_at as "created_at!: time::OffsetDateTime",
+				updated_at as "updated_at!: time::OffsetDateTime"
+			FROM
+				roles
+		"#
 	)
 	.fetch_all(pool)
 	.await?)

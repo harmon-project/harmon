@@ -2,12 +2,12 @@ use crate::*;
 
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, serde::Serialize, serde::Deserialize)]
 #[sqlx(transparent)]
 #[repr(transparent)]
 pub struct ChannelPermissions(i32);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::Type, serde::Serialize, serde::Deserialize)]
 #[sqlx(transparent)]
 #[repr(transparent)]
 pub struct GlobalPermissions(i64);
