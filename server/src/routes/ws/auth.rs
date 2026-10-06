@@ -44,17 +44,22 @@ pub struct ResponseAuthChallenge {
 }
 
 #[inline]
-pub fn is_admin(socket: &wspc::Socket) -> bool {
-	if let Some(AuthenticatedPayload { is_admin, .. }) = socket.get_state::<AuthenticatedPayload>() {
-		is_admin
-	} else {
-		false
+pub fn is_auth(socket: &wspc::Socket) -> bool {
+	socket.get_state::<AuthenticatedPayload>().is_some()
+}
+
+pub async fn get_global_permissions(app: &app::AppState, socket: &wspc::Socket) -> error::Result<permissions::GlobalPermissions> {
+	match socket.get_state::<AuthenticatedPayload>() {
+		Some(AuthenticatedPayload { public_key, .. }) => Ok(permissions::get_global_permissions(app, public_key).await?),
+		None => Ok(permissions::GlobalPermissions::empty()),
 	}
 }
 
-#[inline]
-pub fn is_auth(socket: &wspc::Socket) -> bool {
-	socket.get_state::<AuthenticatedPayload>().is_some()
+pub async fn get_channel_permissions(app: &app::AppState, socket: &wspc::Socket, channel_id: uuid::Uuid) -> error::Result<permissions::ChannelPermissions> {
+	match socket.get_state::<AuthenticatedPayload>() {
+		Some(AuthenticatedPayload { public_key, .. }) => Ok(permissions::get_channel_permissions(app, public_key, channel_id).await?),
+		None => Ok(permissions::ChannelPermissions::empty()),
+	}
 }
 
 pub async fn auth(app: wspc::App, socket: wspc::Socket, params: wspc::Params<AuthParams>) -> error::Result<AuthenticatedPayload> {

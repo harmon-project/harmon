@@ -54,8 +54,9 @@ pub struct ChannelIdentifier(pub Uuid);
 
 pub async fn create_channel(app: wspc::App, socket: wspc::Socket, params: wspc::Params<CreateChannelParams>) -> error::Result<Channel> {
 	let state = app.get_state::<app::AppState>().unwrap();
+	let permissions = auth::get_global_permissions(&state, &socket).await?;
 
-	if !auth::is_admin(&socket) {
+	if !permissions.contains(permissions::GlobalPermissions::MANAGE_CHANNELS) {
 		return Err(error::Error::Unauthorized);
 	}
 
@@ -68,8 +69,9 @@ pub async fn create_channel(app: wspc::App, socket: wspc::Socket, params: wspc::
 
 pub async fn delete_channel(app: wspc::App, socket: wspc::Socket, params: wspc::Params<DeleteChannelParams>) -> error::Result<Channel> {
 	let state = app.get_state::<app::AppState>().unwrap();
+	let permissions = auth::get_global_permissions(&state, &socket).await?;
 
-	if !auth::is_admin(&socket) {
+	if !permissions.contains(permissions::GlobalPermissions::MANAGE_CHANNELS) {
 		return Err(error::Error::Unauthorized);
 	}
 
@@ -80,10 +82,19 @@ pub async fn delete_channel(app: wspc::App, socket: wspc::Socket, params: wspc::
 	Ok(channel)
 }
 
-pub async fn list_channels(app: wspc::App) -> error::Result<Vec<Channel>> {
+pub async fn list_channels(app: wspc::App, socket: wspc::Socket) -> error::Result<Vec<Channel>> {
 	let state = app.get_state::<app::AppState>().unwrap();
 
-	let channels = db::get_channels(&state.db_pool).await?.into_iter().map(Into::into).collect();
+	let mut channels = Vec::<Channel>::new();
+	let all_channels = db::get_channels(&state.db_pool).await?;
+
+	for channel in all_channels {
+		let permissions = auth::get_channel_permissions(&state, &socket, channel.id).await?;
+
+		if permissions.contains(permissions::ChannelPermissions::READ_MESSAGES) {
+			channels.push(channel.into());
+		}
+	}
 
 	Ok(channels)
 }
@@ -94,6 +105,12 @@ pub async fn join_channel(app: wspc::App, socket: wspc::Socket, params: wspc::Pa
 	let Some(auth) = socket.get_state::<auth::AuthenticatedPayload>() else {
 		return Err(error::Error::Unauthorized);
 	};
+
+	let permissions = auth::get_channel_permissions(&state, &socket, *params.channel_id).await?;
+
+	if !permissions.contains(permissions::ChannelPermissions::READ_MESSAGES) {
+		return Err(error::Error::Unauthorized);
+	}
 
 	let Some(profile) = db::get_profile_by_public_key(&state.db_pool, auth.public_key).await? else {
 		return Err(error::Error::ProfileDoesNotExist);

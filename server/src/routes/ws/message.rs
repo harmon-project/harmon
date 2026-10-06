@@ -51,6 +51,12 @@ pub async fn send_message(app: wspc::App, socket: wspc::Socket, params: wspc::Pa
 		return Err(error::Error::NotInChannel);
 	};
 
+	let permissions = auth::get_channel_permissions(&state, &socket, *channel).await?;
+
+	if !permissions.contains(permissions::ChannelPermissions::SEND_MESSAGES) {
+		return Err(error::Error::Unauthorized);
+	}
+
 	let mut tx = state.db_pool.begin().await?;
 
 	let Some(profile) = db::get_profile_by_public_key(&mut *tx, auth.public_key).await? else {
@@ -90,6 +96,12 @@ pub async fn delete_message(app: wspc::App, socket: wspc::Socket, params: wspc::
 		return Err(error::Error::Unauthorized);
 	};
 
+	let permissions = auth::get_global_permissions(&state, &socket).await?;
+
+	if !permissions.contains(permissions::GlobalPermissions::READ_MESSAGES) {
+		return Err(error::Error::Unauthorized);
+	}
+
 	let Some(profile) = db::get_profile_by_public_key(&state.db_pool, auth.public_key).await? else {
 		return Err(error::Error::Unauthorized);
 	};
@@ -126,13 +138,15 @@ pub async fn delete_message(app: wspc::App, socket: wspc::Socket, params: wspc::
 pub async fn load_messages(app: wspc::App, socket: wspc::Socket, params: wspc::Params<LoadMessagesParams>) -> error::Result<Vec<Message>> {
 	let state = app.get_state::<app::AppState>().unwrap();
 
-	if !auth::is_auth(&socket) {
-		return Err(error::Error::Unauthorized);
-	}
-
 	let Some(channel) = socket.get_state::<channel::ChannelIdentifier>() else {
 		return Err(error::Error::NotInChannel);
 	};
+
+	let permissions = auth::get_channel_permissions(&state, &socket, *channel).await?;
+
+	if !permissions.contains(permissions::ChannelPermissions::READ_MESSAGES) {
+		return Err(error::Error::Unauthorized);
+	}
 
 	let mut messages = Vec::new();
 
