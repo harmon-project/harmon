@@ -3,6 +3,7 @@ mod channel;
 mod life_cycle;
 mod message;
 mod profile;
+mod role;
 mod webrtc;
 
 use crate::*;
@@ -35,6 +36,10 @@ pub fn router(state: &app::AppState) -> MethodRouter<app::AppState> {
 
 	app.on("sendWebRTCEvent", webrtc::send_event);
 	app.on("getIceServers", webrtc::get_ice_servers);
+
+	app.on("createRole", role::create_role);
+	app.on("deleteRole", role::delete_role);
+	app.on("listRoles", role::list_roles);
 
 	route
 }
