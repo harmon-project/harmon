@@ -17,7 +17,7 @@
 	}
 </script>
 
-<div class="flex h-screen w-screen items-center justify-center bg-gray-900 text-white">
+<div class="flex h-dvh w-screen items-center justify-center bg-gray-900 text-white">
 	<div>
 		<h1 class="mb-4 text-center text-2xl font-bold">Login</h1>
 		<div class="flex max-w-md flex-col gap-4">
