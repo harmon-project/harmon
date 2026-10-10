@@ -120,6 +120,7 @@
 			<ChatsPanel
 				{client}
 				onStartScreenShare={async () => (await voiceChat?.startScreenStream()) ?? false}
+				onSetMuted={(muted) => voiceChat?.setMuted(muted) ?? false}
 				onStopScreenShare={async () => (await voiceChat?.stopScreenStream()) ?? false}
 				onClickProfile={() => {
 					isEditingProfile = true;
