@@ -21,7 +21,7 @@
 	}
 </script>
 
-<div class="fixed z-10 flex h-screen w-screen items-center justify-center backdrop-blur-xs">
+<div class="fixed z-10 flex h-dvh w-screen items-center justify-center backdrop-blur-xs">
 	<form
 		class="relative flex flex-col items-center justify-center gap-4 rounded-md border border-gray-800 bg-gray-900 p-4"
 		onsubmit={submit}

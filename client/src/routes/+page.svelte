@@ -24,6 +24,12 @@
 
 	let showAddServerModal = $state(false);
 	let isEditingProfile = $state(false);
+	let showNav = $state(false);
+
+	$effect(() => {
+		let _ = client?.currentChannel;
+		showNav = false;
+	});
 
 	async function onClientConnect(client: Client) {
 		info("client connect as id: " + client.id);
@@ -72,7 +78,7 @@
 	});
 </script>
 
-<div class="h-screen w-screen bg-gray-900 text-white">
+<div class="h-dvh w-screen overflow-hidden bg-gray-900 text-white">
 	{#if isEditingProfile}
 		<EditProfile
 			onEdit={async (name) => {
@@ -109,23 +115,49 @@
 			</button>
 		</div>
 	{:else if client}
-		<div class="grid h-full w-full grid-cols-[auto_auto_1fr_auto]">
-			<SidePanel
-				{servers}
-				{currentServer}
-				onAddServer={() => {
-					showAddServerModal = true;
-				}}
-			/>
-			<ChatsPanel
-				{client}
-				onSetMuted={(muted) => voiceChat?.setMuted(muted) ?? false}
-				onStartScreenShare={async () => (await voiceChat?.startScreenStream()) ?? false}
-				onStopScreenShare={async () => (await voiceChat?.stopScreenStream()) ?? false}
-				onClickProfile={() => {
-					isEditingProfile = true;
-				}}
-			/>
+		<div
+			class="grid h-full w-full grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] md:grid-cols-[auto_auto_minmax(0,1fr)] md:grid-rows-1"
+		>
+			<div class="flex items-center gap-3 border-b p-3 md:hidden">
+				<button
+					class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md hover:bg-gray-700"
+					aria-label="Open menu"
+					onclick={() => (showNav = true)}
+				>
+					☰
+				</button>
+				<span class="truncate"
+					>{client.currentChannel?.channel.name ?? client.serverInfo?.title}</span
+				>
+			</div>
+			{#if showNav}
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					class="fixed inset-0 z-20 bg-black/50 md:hidden"
+					onclick={() => (showNav = false)}
+				></div>
+			{/if}
+			<div
+				class={`fixed inset-y-0 left-0 z-30 flex max-w-[85vw] bg-gray-900 transition-transform md:contents ${showNav ? "translate-x-0" : "-translate-x-full"}`}
+			>
+				<SidePanel
+					{servers}
+					{currentServer}
+					onAddServer={() => {
+						showAddServerModal = true;
+					}}
+				/>
+				<ChatsPanel
+					{client}
+					onSetMuted={(muted) => voiceChat?.setMuted(muted) ?? false}
+					onStartScreenShare={async () => (await voiceChat?.startScreenStream()) ?? false}
+					onStopScreenShare={async () => (await voiceChat?.stopScreenStream()) ?? false}
+					onClickProfile={() => {
+						isEditingProfile = true;
+					}}
+				/>
+			</div>
 			{#if client.currentChannel}
 				{#key client.currentChannel}
 					{#if client.currentChannel.channel.type == "Text"}
