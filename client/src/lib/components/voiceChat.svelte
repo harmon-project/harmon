@@ -247,6 +247,13 @@
 		}
 	}
 
+	export function setMuted(muted: boolean) {
+		for (const track of audioStream?.getAudioTracks() ?? []) {
+			track.enabled = !muted;
+		}
+		return muted;
+	}
+
 	export async function startScreenStream() {
 		try {
 			screenStream = await navigator.mediaDevices.getDisplayMedia({

@@ -119,6 +119,7 @@
 			/>
 			<ChatsPanel
 				{client}
+				onSetMuted={(muted) => voiceChat?.setMuted(muted) ?? false}
 				onStartScreenShare={async () => (await voiceChat?.startScreenStream()) ?? false}
 				onStopScreenShare={async () => (await voiceChat?.stopScreenStream()) ?? false}
 				onClickProfile={() => {

@@ -2,7 +2,12 @@
 	import type { Channel, Client } from "harmon-lib";
 	import { useAuth } from "$lib/auth";
 	import { push } from "./toast.svelte";
-	import { faHashtag, faVolume } from "@fortawesome/free-solid-svg-icons";
+	import {
+		faHashtag,
+		faMicrophone,
+		faMicrophoneSlash,
+		faVolume
+	} from "@fortawesome/free-solid-svg-icons";
 	import { uint8ArrayToZ32 } from "harmon-lib/utils";
 	import Fa from "svelte-fa";
 	import { faChromecast } from "@fortawesome/free-brands-svg-icons";
@@ -11,18 +16,25 @@
 		client,
 		onClickProfile,
 		onStartScreenShare,
-		onStopScreenShare
+		onStopScreenShare,
+		onSetMuted
 	}: {
 		client: Client;
 		onClickProfile: () => void;
 		onStartScreenShare: () => Promise<boolean>;
 		onStopScreenShare: () => Promise<boolean>;
+		onSetMuted: (muted: boolean) => boolean;
 	} = $props();
 
 	const auth = useAuth();
 	const pubKey = uint8ArrayToZ32(auth?.publicKey!);
 
 	let isScreenSharing = $state(false);
+	let isMuted = $state(false);
+
+	function onMuteClick() {
+		isMuted = onSetMuted(!isMuted);
+	}
 
 	async function onScreenShareClick() {
 		isScreenSharing = isScreenSharing ? await onStopScreenShare() : await onStartScreenShare();
@@ -36,6 +48,7 @@
 	$effect(() => {
 		let _ = client.currentChannel;
 		isScreenSharing = false;
+		isMuted = false;
 	});
 </script>
 
@@ -80,6 +93,18 @@
 			</button>
 		</div>
 		{#if client.currentChannel?.channel.type == "Voice"}
+			<button
+				class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md hover:bg-gray-700"
+				onclick={onMuteClick}
+				title={isMuted ? "Unmute" : "Mute"}
+				aria-label={isMuted ? "Unmute" : "Mute"}
+			>
+				{#if isMuted}
+					<Fa icon={faMicrophoneSlash} class="text-red-500"></Fa>
+				{:else}
+					<Fa icon={faMicrophone}></Fa>
+				{/if}
+			</button>
 			<button
 				class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md hover:bg-gray-700"
 				onclick={onScreenShareClick}
