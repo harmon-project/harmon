@@ -108,7 +108,7 @@
 	});
 </script>
 
-<div class="flex h-screen w-full flex-col">
+<div class="flex h-full min-h-0 w-full min-w-0 flex-col">
 	<div class="flex h-full w-full overflow-y-auto">
 		<div
 			bind:this={scrollContainer}

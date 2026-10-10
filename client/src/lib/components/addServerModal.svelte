@@ -35,7 +35,7 @@
 </script>
 
 <div
-	class="fixed top-0 left-0 z-10 flex h-screen w-screen flex-col items-center justify-center backdrop-blur-xs"
+	class="fixed top-0 left-0 z-10 flex h-dvh w-screen flex-col items-center justify-center backdrop-blur-xs"
 >
 	<form
 		class="relative flex flex-col items-center gap-2 rounded-md border border-gray-800 bg-gray-900 p-4"

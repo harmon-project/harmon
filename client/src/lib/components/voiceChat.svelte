@@ -335,7 +335,7 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		onclick={resumeAudio}
-		class="fixed top-0 left-0 z-10 flex h-screen w-screen cursor-pointer items-center justify-center bg-gray-900"
+		class="fixed top-0 left-0 z-10 flex h-dvh w-screen cursor-pointer items-center justify-center bg-gray-900"
 	>
 		<p class="text-white">Click to enable audio</p>
 	</div>
@@ -360,7 +360,7 @@
 	<audio class="hidden" autoplay playsinline muted use:sink={stream}></audio>
 {/snippet}
 
-<div class="flex h-full w-full flex-col bg-gray-900">
+<div class="flex h-full min-h-0 w-full min-w-0 flex-col bg-gray-900">
 	<div
 		class="grid min-h-0 flex-1 auto-rows-[minmax(14rem,1fr)] grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-3 overflow-x-hidden overflow-y-auto p-4"
 	>
