@@ -20,7 +20,7 @@ export async function getInfo(url: string): Promise<GetInfoResponse> {
 	return response.json();
 }
 
-export async function postFiles(url: string, files: FileList): Promise<File[]> {
+export async function postFiles(url: string, files: FileList | globalThis.File[]): Promise<File[]> {
 	const formData = new FormData();
 
 	for (const file of files) {
