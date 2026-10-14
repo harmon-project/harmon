@@ -2,7 +2,7 @@
 	import { onMount, tick } from "svelte";
 	import { Client, type Message } from "harmon-lib";
 	import Fa from "svelte-fa";
-	import { faUpload } from "@fortawesome/free-solid-svg-icons";
+	import { faUpload, faXmark } from "@fortawesome/free-solid-svg-icons";
 	import { postFiles } from "harmon-lib/http";
 	import FilePreview from "./filePreview.svelte";
 	import Msg from "./message.svelte";
@@ -12,7 +12,7 @@
 
 	let messages = $state<Message[]>([]);
 	let messageContent = $state("");
-	let messageFiles: FileList | undefined = $state();
+	let messageFiles: File[] = $state([]);
 
 	let scrollContainer: HTMLDivElement | null = null;
 	let isLoadingMessages = false;
@@ -29,12 +29,12 @@
 	}
 
 	async function sendMessage() {
-		if ((!messageContent.trim() && !messageFiles) || isSendingMessage) return;
+		if ((!messageContent.trim() && messageFiles.length == 0) || isSendingMessage) return;
 
 		try {
 			isSendingMessage = true;
 
-			if (messageFiles) {
+			if (messageFiles.length > 0) {
 				const files = await postFiles(client.url, messageFiles);
 				const fileIds = files.map((f) => f.id);
 
@@ -44,9 +44,20 @@
 			}
 		} finally {
 			messageContent = "";
-			messageFiles = undefined;
+			messageFiles = [];
 			isSendingMessage = false;
 		}
+	}
+
+	function addFiles(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		messageFiles = [...messageFiles, ...(input.files ?? [])];
+		// reset so picking the same file again still fires change
+		input.value = "";
+	}
+
+	function removeFile(index: number) {
+		messageFiles = messageFiles.filter((_, i) => i !== index);
 	}
 
 	async function messageReceived(message: Message) {
@@ -136,11 +147,21 @@
 			<Loading />
 		</div>
 	{:else}
-		{#if messageFiles}
+		{#if messageFiles.length > 0}
 			<hr />
-			<div class="flex flex-row gap-2 p-2">
-				{#each messageFiles as file}
-					<FilePreview {file} />
+			<div class="flex flex-row gap-2 overflow-x-auto p-2">
+				{#each messageFiles as file, i (file)}
+					<div class="relative shrink-0" title={file.name}>
+						<FilePreview {file} />
+						<button
+							type="button"
+							class="absolute top-1 right-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-gray-900/80 hover:bg-red-600"
+							aria-label={`Remove ${file.name}`}
+							onclick={() => removeFile(i)}
+						>
+							<Fa icon={faXmark} />
+						</button>
+					</div>
 				{/each}
 			</div>
 			<hr />
@@ -161,7 +182,7 @@
 				>
 					<Fa class="text-2xl" icon={faUpload}></Fa>
 					<input
-						bind:files={messageFiles}
+						onchange={addFiles}
 						class="hidden"
 						type="file"
 						id="file-upload"
