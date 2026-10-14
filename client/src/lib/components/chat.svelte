@@ -19,6 +19,9 @@
 	let isSendingMessage = $state(false);
 	let hasMore = true;
 
+	let isDraggingFiles = $state(false);
+	let dragDepth = 0;
+
 	const beforeId = $derived<string | undefined>(messages?.[0]?.id);
 
 	async function scrollToBottom() {
@@ -49,10 +52,50 @@
 		}
 	}
 
-	function addFiles(event: Event) {
+	function addFiles(files: Iterable<File>) {
+		messageFiles = [...messageFiles, ...files];
+	}
+
+	function onFileInputChange(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
-		messageFiles = [...messageFiles, ...(input.files ?? [])];
+		addFiles(input.files ?? []);
 		input.value = "";
+	}
+
+	function isFileDrag(event: DragEvent) {
+		return event.dataTransfer?.types.includes("Files") ?? false;
+	}
+
+	function onDragEnter(event: DragEvent) {
+		if (!isFileDrag(event)) return;
+		event.preventDefault();
+		dragDepth++;
+		isDraggingFiles = true;
+	}
+
+	function onDragOver(event: DragEvent) {
+		if (!isFileDrag(event)) return;
+		event.preventDefault();
+		event.dataTransfer!.dropEffect = isSendingMessage ? "none" : "copy";
+	}
+
+	function onDragLeave(event: DragEvent) {
+		if (!isFileDrag(event)) return;
+
+		dragDepth = Math.max(0, dragDepth - 1);
+		if (dragDepth == 0) {
+			isDraggingFiles = false;
+		}
+	}
+
+	function onDrop(event: DragEvent) {
+		if (!isFileDrag(event)) return;
+		event.preventDefault();
+		dragDepth = 0;
+		isDraggingFiles = false;
+
+		if (isSendingMessage) return;
+		addFiles(event.dataTransfer?.files ?? []);
 	}
 
 	function removeFile(index: number) {
@@ -118,7 +161,28 @@
 	});
 </script>
 
-<div class="flex h-full min-h-0 w-full min-w-0 flex-col">
+<svelte:window
+	ondragover={(e) => isFileDrag(e) && e.preventDefault()}
+	ondrop={(e) => isFileDrag(e) && e.preventDefault()}
+/>
+
+<div
+	role="region"
+	aria-label="Chat"
+	class="relative flex h-full min-h-0 w-full min-w-0 flex-col"
+	ondragenter={onDragEnter}
+	ondragover={onDragOver}
+	ondragleave={onDragLeave}
+	ondrop={onDrop}
+>
+	{#if isDraggingFiles && !isSendingMessage}
+		<div
+			class="pointer-events-none absolute inset-2 z-10 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-blue-500 bg-gray-900/90"
+		>
+			<Fa class="text-4xl text-blue-500" icon={faUpload} />
+			<p>Drop files to attach them</p>
+		</div>
+	{/if}
 	<div class="flex h-full w-full overflow-y-auto">
 		<div
 			bind:this={scrollContainer}
@@ -185,7 +249,7 @@
 				>
 					<Fa class="text-2xl" icon={faUpload}></Fa>
 					<input
-						onchange={addFiles}
+						onchange={onFileInputChange}
 						class="hidden"
 						type="file"
 						id="file-upload"
