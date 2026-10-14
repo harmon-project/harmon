@@ -13,6 +13,7 @@
 	import ContextMenu from "$lib/components/contextMenu.svelte";
 	import Markdown from "$lib/components/markdown.svelte";
 	import Profile from "$lib/components/profile.svelte";
+	import ImageViewer from "$lib/components/imageViewer.svelte";
 
 	type MessageParams = {
 		url: string;
@@ -25,6 +26,7 @@
 
 	let menuPosition = $state<{ x: number; y: number } | null>(null);
 	let profilePosition = $state<{ x: number; y: number } | null>(null);
+	let viewingImage = $state<{ src: string; name: string } | null>(null);
 
 	function openProfile(event: MouseEvent) {
 		event.preventDefault();
@@ -160,11 +162,22 @@
 							src={`${url}/files/${attachment.id}`}
 						></audio>
 					{:else if attachment.mime_type.startsWith("image")}
-						<img
-							class="h-64 rounded-lg"
-							alt={attachment.hash}
-							src={`${url}/files/${attachment.id}`}
-						/>
+						<button
+							type="button"
+							class="cursor-zoom-in"
+							aria-label={`Open ${attachment.name}`}
+							onclick={() =>
+								(viewingImage = {
+									src: `${url}/files/${attachment.id}`,
+									name: attachment.name
+								})}
+						>
+							<img
+								class="h-64 rounded-lg"
+								alt={attachment.hash}
+								src={`${url}/files/${attachment.id}`}
+							/>
+						</button>
 					{:else if attachment.mime_type.startsWith("video")}
 						<video
 							controls
@@ -185,6 +198,14 @@
 		</div>
 	</div>
 </div>
+
+{#if viewingImage}
+	<ImageViewer
+		src={viewingImage.src}
+		name={viewingImage.name}
+		onClose={() => (viewingImage = null)}
+	/>
+{/if}
 
 {#if profilePosition}
 	<Profile
