@@ -13,6 +13,7 @@
 	import ContextMenu from "$lib/components/contextMenu.svelte";
 	import Markdown from "$lib/components/markdown.svelte";
 	import Profile from "$lib/components/profile.svelte";
+	import ConfirmModal from "$lib/components/confirmModal.svelte";
 
 	type MessageParams = {
 		url: string;
@@ -25,6 +26,16 @@
 
 	let menuPosition = $state<{ x: number; y: number } | null>(null);
 	let profilePosition = $state<{ x: number; y: number } | null>(null);
+	let isConfirmingDelete = $state(false);
+
+	function requestDelete(event: MouseEvent) {
+		// shift-click skips the confirmation, like Discord
+		if (event.shiftKey) {
+			onDelete?.();
+		} else {
+			isConfirmingDelete = true;
+		}
+	}
 
 	function openProfile(event: MouseEvent) {
 		event.preventDefault();
@@ -97,7 +108,7 @@
 			</button>
 		{/if}
 		{#if onDelete}
-			<button onclick={onDelete} class="text-red-400">
+			<button onclick={requestDelete} class="text-red-400">
 				<Fa icon={faTrash} />
 			</button>
 		{/if}
@@ -105,9 +116,28 @@
 			<Fa icon={faEllipsisH} />
 		</button>
 	</div>
+	{#if isConfirmingDelete}
+		<ConfirmModal
+			title="Delete message"
+			confirmLabel="Delete"
+			onCancel={() => (isConfirmingDelete = false)}
+			onConfirm={() => {
+				isConfirmingDelete = false;
+				onDelete?.();
+			}}
+		>
+			<p class="text-sm text-gray-300">Are you sure you want to delete this message?</p>
+			{#if message.content.trim()}
+				<p class="line-clamp-3 rounded-md bg-gray-800 p-2 text-sm wrap-break-word">
+					{message.content}
+				</p>
+			{/if}
+			<p class="text-xs text-gray-400">Tip: hold Shift while clicking delete to skip this.</p>
+		</ConfirmModal>
+	{/if}
 	<ContextMenu bind:position={menuPosition}>
 		{#if onDelete}
-			<button onclick={onDelete} class="text-red-400">
+			<button onclick={requestDelete} class="text-red-400">
 				<Fa icon={faTrash} />
 				Delete
 			</button>
