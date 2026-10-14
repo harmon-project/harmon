@@ -62,6 +62,20 @@
 		input.value = "";
 	}
 
+	let textarea: HTMLTextAreaElement | undefined = $state();
+
+	function onPaste(event: ClipboardEvent) {
+		const files = event.clipboardData?.files;
+		if (!files || files.length == 0 || isSendingMessage) return;
+
+		// pasting into some other field (e.g. a modal) shouldn't attach to the chat
+		const target = event.target as HTMLElement | null;
+		if (target !== textarea && target?.closest("input, textarea, [contenteditable]")) return;
+
+		event.preventDefault();
+		addFiles(files);
+	}
+
 	function isFileDrag(event: DragEvent) {
 		return event.dataTransfer?.types.includes("Files") ?? false;
 	}
@@ -162,6 +176,7 @@
 <svelte:window
 	ondragover={(e) => isFileDrag(e) && e.preventDefault()}
 	ondrop={(e) => isFileDrag(e) && e.preventDefault()}
+	onpaste={onPaste}
 />
 
 <div
@@ -255,6 +270,7 @@
 					/>
 				</label>
 				<textarea
+					bind:this={textarea}
 					bind:value={messageContent}
 					onkeydown={(event) => {
 						if (event.key === "Enter" && !event.shiftKey) {
