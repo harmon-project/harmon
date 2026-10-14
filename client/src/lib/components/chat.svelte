@@ -19,6 +19,8 @@
 	let isSendingMessage = $state(false);
 	let hasMore = true;
 
+	let textarea: HTMLTextAreaElement | undefined = $state();
+
 	let isDraggingFiles = $state(false);
 	let dragDepth = 0;
 
@@ -50,6 +52,10 @@
 			messageFiles = [];
 			isSendingMessage = false;
 		}
+
+		// the input is swapped for a spinner while sending, so give focus back once it returns
+		await tick();
+		textarea?.focus();
 	}
 
 	function addFiles(files: Iterable<File>) {
@@ -262,6 +268,7 @@
 					/>
 				</label>
 				<textarea
+					bind:this={textarea}
 					bind:value={messageContent}
 					onpaste={onPaste}
 					onkeydown={(event) => {
