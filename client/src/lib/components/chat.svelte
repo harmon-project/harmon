@@ -2,7 +2,7 @@
 	import { onMount, tick } from "svelte";
 	import { Client, type Message } from "harmon-lib";
 	import Fa from "svelte-fa";
-	import { faUpload, faXmark } from "@fortawesome/free-solid-svg-icons";
+	import { faTrash, faUpload } from "@fortawesome/free-solid-svg-icons";
 	import { postFiles } from "harmon-lib/http";
 	import FilePreview from "./filePreview.svelte";
 	import Msg from "./message.svelte";
@@ -151,16 +151,21 @@
 			<hr />
 			<div class="flex shrink-0 flex-row gap-2 overflow-x-auto overflow-y-hidden p-2">
 				{#each messageFiles as file, i (file)}
-					<div class="relative shrink-0" title={file.name}>
+					<div class="group relative shrink-0" title={file.name}>
 						<FilePreview {file} />
-						<button
-							type="button"
-							class="absolute top-1 right-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-gray-900/80 hover:bg-red-600"
-							aria-label={`Remove ${file.name}`}
-							onclick={() => removeFile(i)}
+						<!-- same look as the message hover toolbar; always shown on touch screens -->
+						<div
+							class="absolute top-1 right-1 flex items-center justify-center rounded-md bg-gray-900 p-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 *:cursor-pointer *:rounded-sm *:p-1 *:transition *:hover:bg-white/10 [&_svg]:transition-transform [&>*:hover>svg]:scale-110 [@media(hover:none)]:opacity-100"
 						>
-							<Fa icon={faXmark} />
-						</button>
+							<button
+								type="button"
+								class="text-red-400"
+								aria-label={`Remove ${file.name}`}
+								onclick={() => removeFile(i)}
+							>
+								<Fa icon={faTrash} />
+							</button>
+						</div>
 					</div>
 				{/each}
 			</div>
