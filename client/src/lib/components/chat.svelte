@@ -22,6 +22,20 @@
 	let isDraggingFiles = $state(false);
 	let dragDepth = 0;
 
+	// messages from the same author this close together are shown as one block, like Discord
+	const GROUP_WINDOW_MS = 7 * 60 * 1000;
+
+	function continuesPrevious(index: number) {
+		const previous = messages[index - 1];
+		const message = messages[index];
+		if (!previous) return false;
+		return (
+			previous.profile.public_key === message.profile.public_key &&
+			new Date(message.created_at).getTime() - new Date(previous.created_at).getTime() <
+				GROUP_WINDOW_MS
+		);
+	}
+
 	const beforeId = $derived<string | undefined>(messages?.[0]?.id);
 
 	async function scrollToBottom() {
@@ -195,15 +209,16 @@
 			class="flex h-full w-full overflow-y-auto font-mono"
 		>
 			<div class="flex w-full flex-col">
-				{#each messages as message}
+				{#each messages as message, i}
 					{#if message.profile.public_key === client.profile?.public_key}
 						<Msg
 							{message}
 							url={client.url}
+							compact={continuesPrevious(i)}
 							onDelete={() => deleteMessage(message.id)}
 						/>
 					{:else}
-						<Msg {message} url={client.url} />
+						<Msg {message} url={client.url} compact={continuesPrevious(i)} />
 					{/if}
 				{/each}
 			</div>

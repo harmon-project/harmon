@@ -19,9 +19,11 @@
 		message: Message;
 		onEdit?: () => void;
 		onDelete?: () => void;
+		// continuation of the previous message by the same author: hide the avatar and header
+		compact?: boolean;
 	};
 
-	const { url, message, onEdit, onDelete }: MessageParams = $props();
+	const { url, message, onEdit, onDelete, compact = false }: MessageParams = $props();
 
 	let menuPosition = $state<{ x: number; y: number } | null>(null);
 	let profilePosition = $state<{ x: number; y: number } | null>(null);
@@ -77,17 +79,31 @@
 
 <div
 	role="listitem"
-	class="group relative flex flex-row gap-1 p-2 hover:bg-gray-800"
+	class="group relative flex flex-row gap-1 px-2 hover:bg-gray-800 {compact
+		? 'py-0.5'
+		: 'pt-2 pb-0.5'}"
 	oncontextmenu={openMenu}
 >
-	<button
-		type="button"
-		onclick={openProfile}
-		class="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full"
-		style="background-color: {getColor()};"
-	>
-		{message.profile.name[0]}
-	</button>
+	{#if compact}
+		<span
+			class="flex w-8 shrink-0 justify-center pt-1 text-[0.625rem] text-gray-400 opacity-0 group-hover:opacity-100"
+			title={new Date(message.created_at).toLocaleString("pt-BR")}
+		>
+			{new Date(message.created_at).toLocaleTimeString("pt-BR", {
+				hour: "2-digit",
+				minute: "2-digit"
+			})}
+		</span>
+	{:else}
+		<button
+			type="button"
+			onclick={openProfile}
+			class="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full"
+			style="background-color: {getColor()};"
+		>
+			{message.profile.name[0]}
+		</button>
+	{/if}
 	<div
 		class="absolute top-1 right-8 flex items-center justify-center gap-1 rounded-md bg-gray-900 px-1 py-1 opacity-0 transition-opacity *:cursor-pointer *:rounded-sm *:p-1 *:transition group-hover:opacity-100 *:hover:bg-white/10 [&_svg]:transition-transform [&>*:hover>svg]:scale-110"
 	>
@@ -128,18 +144,20 @@
 		</button>
 	</ContextMenu>
 	<div class="min-w-0 shrink">
-		<div class="flex gap-2">
-			<button
-				type="button"
-				aria-haspopup="dialog"
-				aria-expanded={profilePosition !== null}
-				onclick={openProfile}
-				class="cursor-pointer text-left font-extrabold hover:underline"
-			>
-				{message.profile.name}
-			</button>
-			<p class="text-sm text-gray-400">{formatDate(message.created_at)}</p>
-		</div>
+		{#if !compact}
+			<div class="flex gap-2">
+				<button
+					type="button"
+					aria-haspopup="dialog"
+					aria-expanded={profilePosition !== null}
+					onclick={openProfile}
+					class="cursor-pointer text-left font-extrabold hover:underline"
+				>
+					{message.profile.name}
+				</button>
+				<p class="text-sm text-gray-400">{formatDate(message.created_at)}</p>
+			</div>
+		{/if}
 		<Markdown content={message.content} />
 		<div class="flex flex-col items-start gap-4">
 			{#each message.attachments as attachment}
