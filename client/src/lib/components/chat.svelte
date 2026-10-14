@@ -270,7 +270,8 @@
 							sendMessage();
 						}
 					}}
-					class="w-full rounded-md border border-inherit bg-inherit p-1.5"></textarea>
+					class="w-full resize-none rounded-md border border-inherit bg-inherit p-1.5"
+				></textarea>
 				<button type="submit" class="cursor-pointer text-3xl">▶️</button>
 			</div>
 		</form>
