@@ -98,6 +98,11 @@
 		addFiles(event.dataTransfer?.files ?? []);
 	}
 
+	function onPaste(event: ClipboardEvent) {
+		const files = event.clipboardData?.files;
+		addFiles(files ?? []);
+	}
+
 	function removeFile(index: number) {
 		messageFiles = messageFiles.filter((_, i) => i !== index);
 	}
@@ -258,6 +263,7 @@
 				</label>
 				<textarea
 					bind:value={messageContent}
+					onpaste={onPaste}
 					onkeydown={(event) => {
 						if (event.key === "Enter" && !event.shiftKey) {
 							event.preventDefault();
