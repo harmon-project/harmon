@@ -149,7 +149,7 @@
 	{:else}
 		{#if messageFiles.length > 0}
 			<hr />
-			<div class="flex flex-row gap-2 overflow-x-auto p-2">
+			<div class="flex shrink-0 flex-row gap-2 overflow-x-auto overflow-y-hidden p-2">
 				{#each messageFiles as file, i (file)}
 					<div class="relative shrink-0" title={file.name}>
 						<FilePreview {file} />
