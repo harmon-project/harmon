@@ -153,7 +153,7 @@
 					<div class="group relative shrink-0" title={file.name}>
 						<FilePreview {file} />
 						<div
-							class="absolute top-1 right-1 flex items-center justify-center rounded-md bg-gray-900 p-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 *:cursor-pointer *:rounded-sm *:p-1 *:transition *:hover:bg-white/10 [&_svg]:transition-transform [&>*:hover>svg]:scale-110 [@media(hover:none)]:opacity-100"
+							class="absolute top-1 right-1 flex items-center justify-center rounded-md bg-gray-900 p-1 opacity-0 transition-opacity *:cursor-pointer *:rounded-sm *:p-1 *:transition group-focus-within:opacity-100 group-hover:opacity-100 *:hover:bg-white/10 [&_svg]:transition-transform [&>*:hover>svg]:scale-110 [@media(hover:none)]:opacity-100"
 						>
 							<button
 								type="button"
