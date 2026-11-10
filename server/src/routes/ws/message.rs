@@ -96,9 +96,13 @@ pub async fn delete_message(app: wspc::App, socket: wspc::Socket, params: wspc::
 		return Err(error::Error::Unauthorized);
 	};
 
-	let permissions = auth::get_global_permissions(&state, &socket).await?;
+	let Some(channel) = socket.get_state::<channel::ChannelIdentifier>() else {
+		return Err(error::Error::NotInChannel);
+	};
 
-	if !permissions.contains(permissions::GlobalPermissions::READ_MESSAGES) {
+	let permissions = auth::get_channel_permissions(&state, &socket, *channel).await?;
+
+	if !permissions.contains(permissions::ChannelPermissions::READ_MESSAGES) {
 		return Err(error::Error::Unauthorized);
 	}
 

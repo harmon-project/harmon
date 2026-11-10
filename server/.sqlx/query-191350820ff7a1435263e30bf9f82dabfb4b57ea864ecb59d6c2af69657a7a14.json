@@ -1,0 +1,44 @@
+{
+  "db_name": "SQLite",
+  "query": "\n\t\t\tSELECT\n\t\t\t\troles.id as \"id!: Uuid\",\n\t\t\t\troles.name,\n\t\t\t\troles.permissions as \"permissions!: permissions::GlobalPermissions\",\n\t\t\t\troles.created_at as \"created_at!: time::OffsetDateTime\",\n\t\t\t\troles.updated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t\tFROM\n\t\t\t\troles\n\t\t\tINNER JOIN\n\t\t\t\tprofile_roles ON profile_roles.role_id = roles.id\n\t\t\tWHERE\n\t\t\t\tprofile_roles.profile_id = $1\n\t\t",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!: Uuid",
+        "ordinal": 0,
+        "type_info": "Blob"
+      },
+      {
+        "name": "name",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "permissions!: permissions::GlobalPermissions",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "created_at!: time::OffsetDateTime",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "updated_at!: time::OffsetDateTime",
+        "ordinal": 4,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "191350820ff7a1435263e30bf9f82dabfb4b57ea864ecb59d6c2af69657a7a14"
+}

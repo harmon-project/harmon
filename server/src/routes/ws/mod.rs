@@ -3,6 +3,7 @@ mod channel;
 mod life_cycle;
 mod message;
 mod profile;
+mod profile_role;
 mod role;
 mod webrtc;
 
@@ -40,6 +41,9 @@ pub fn router(state: &app::AppState) -> MethodRouter<app::AppState> {
 	app.on("createRole", role::create_role);
 	app.on("deleteRole", role::delete_role);
 	app.on("listRoles", role::list_roles);
+
+	app.on("createProfileRole", profile_role::create_profile_role);
+	app.on("deleteProfileRole", profile_role::delete_profile_role);
 
 	route
 }

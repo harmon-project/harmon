@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tSELECT\n\t\t\t\troles.id as \"id!: Uuid\",\n\t\t\t\troles.name,\n\t\t\t\troles.permissions as \"permissions!: GlobalPermissions\",\n\t\t\t\troles.created_at as \"created_at!: time::OffsetDateTime\",\n\t\t\t\troles.updated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t\tFROM\n\t\t\t\troles\n\t\t\tINNER JOIN\n\t\t\t\tprofile_roles ON profile_roles.role_id = roles.id\n\t\t\tWHERE\n\t\t\t\tprofile_roles.profile_id = $1\n\t\t",
+  "query": "\n            INSERT INTO roles\n                (id, name, permissions, created_at, updated_at)\n            VALUES\n                ($1, $2, $3, $4, $4)\n            RETURNING\n                id as \"id!: Uuid\",\n                name,\n                permissions as \"permissions!: permissions::GlobalPermissions\",\n                created_at as \"created_at!: time::OffsetDateTime\",\n                updated_at as \"updated_at!: time::OffsetDateTime\"\n        ",
   "describe": {
     "columns": [
       {
@@ -14,7 +14,7 @@
         "type_info": "Text"
       },
       {
-        "name": "permissions!: GlobalPermissions",
+        "name": "permissions!: permissions::GlobalPermissions",
         "ordinal": 2,
         "type_info": "Integer"
       },
@@ -30,7 +30,7 @@
       }
     ],
     "parameters": {
-      "Right": 1
+      "Right": 4
     },
     "nullable": [
       false,
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "51d136fc22f6ccc73cd360884c098a2029ee3bbe2fb3426d9f59c4b8488d9dfb"
+  "hash": "1d2f8cba33f8f7c595245aa70258b1971fa5a24a2d9f2f3aad0f6bc14a9830e0"
 }
