@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tSELECT\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tname,\n\t\t\t\tpermissions as \"permissions!: GlobalPermissions\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\",\n\t\t\t\tupdated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t\tFROM\n\t\t\t\troles\n\t\t",
+  "query": "\n\t\t\tSELECT\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tname,\n\t\t\t\tpermissions as \"permissions!: permissions::GlobalPermissions\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\",\n\t\t\t\tupdated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t\tFROM\n\t\t\t\troles\n\t\t\tWHERE\n\t\t\t\tid = $1\n\t\t",
   "describe": {
     "columns": [
       {
@@ -14,7 +14,7 @@
         "type_info": "Text"
       },
       {
-        "name": "permissions!: GlobalPermissions",
+        "name": "permissions!: permissions::GlobalPermissions",
         "ordinal": 2,
         "type_info": "Integer"
       },
@@ -30,7 +30,7 @@
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
       false,
@@ -40,5 +40,5 @@
       false
     ]
   },
-  "hash": "c01a9ae1bb560ef45cd00989a7bdd3eae3f5979fea25521bd46194128d2f7930"
+  "hash": "9465ef463ef8b0817469f3e2bea03983e4366ba05d2c3772f19ba07c3a59bd24"
 }
