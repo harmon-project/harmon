@@ -42,7 +42,7 @@ pub async fn get_profile(params: wspc::Params<GetProfileParams>, app: wspc::App,
 
 	let profile = db::get_profile_by_public_key(&state.db_pool, public_key).await?;
 
-	Ok(profile.map(|profile| profile.into()))
+	Ok(profile.map(Into::into))
 }
 
 impl From<db::Profile> for Profile {

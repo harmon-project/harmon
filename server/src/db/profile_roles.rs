@@ -10,6 +10,26 @@ pub struct ProfileRole {
 	pub created_at: time::OffsetDateTime,
 }
 
+pub async fn get_profile_roles(pool: impl sqlx::SqliteExecutor<'_>, profile_id: Uuid) -> error::Result<Vec<ProfileRole>> {
+	Ok(sqlx::query_as!(
+		ProfileRole,
+		r#"
+			SELECT
+				id as "id!: Uuid",
+				profile_id as "profile_id!: Uuid",
+                role_id as "role_id!: Uuid",
+				created_at as "created_at!: time::OffsetDateTime"
+			FROM
+				profile_roles
+			WHERE
+				profile_id = $1
+		"#,
+		profile_id
+	)
+	.fetch_all(pool)
+	.await?)
+}
+
 pub async fn insert_profile_role(pool: impl sqlx::SqliteExecutor<'_>, profile_id: Uuid, role_id: Uuid) -> error::Result<ProfileRole> {
 	let id = Uuid::now_v7();
 	let created_at = time::OffsetDateTime::now_utc();

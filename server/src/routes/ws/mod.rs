@@ -45,6 +45,7 @@ pub fn router(state: &app::AppState) -> MethodRouter<app::AppState> {
 
 	app.on("createProfileRole", profile_role::create_profile_role);
 	app.on("deleteProfileRole", profile_role::delete_profile_role);
+	app.on("listProfileRoles", profile_role::list_profile_roles);
 
 	app.on("createChannelRolePermission", channel_role_permission::create_channel_role_permission);
 	app.on("deleteChannelRolePermission", channel_role_permission::delete_channel_role_permission);
