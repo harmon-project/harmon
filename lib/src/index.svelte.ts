@@ -164,6 +164,30 @@ export class Client {
 		return await this._rpc.call("listChannels");
 	}
 
+	async createProfileRole(publicKey: string, roleId: string) {
+		return await this._rpc.call("createProfileRole", publicKey, roleId);
+	}
+
+	async deleteProfileRole(profileRoleId: string) {
+		return await this._rpc.call("deleteProfileRole", profileRoleId);
+	}
+
+	async listProfileRoles(publicKey: string) {
+		return await this._rpc.call("listProfileRoles", publicKey);
+	}
+
+	async createChannelRolePermission(channelId: string, roleId: string, permissions: number) {
+		return await this._rpc.call("createChannelRolePermission", channelId, roleId, permissions);
+	}
+
+	async deleteChannelRolePermission(id: string) {
+		return await this._rpc.call("deleteChannelRolePermission", id);
+	}
+
+	async listChannelRolePermissions(channelId: string) {
+		return await this._rpc.call("listChannelRolePermissions", channelId);
+	}
+
 	async getProfile(public_key?: string) {
 		return await this._rpc.call("getProfile", public_key);
 	}
@@ -277,6 +301,19 @@ export interface Profile {
 	public_key: string;
 }
 
+export interface ProfileRole {
+	id: string;
+	profile_id: string;
+	role_id: string;
+}
+
+export interface ChannelRolePermission {
+	id: string;
+	channel_id: string;
+	role_id: string;
+	permissions: number;
+}
+
 export interface ServerInfo {
 	title: string;
 	public_key: string;
@@ -318,6 +355,12 @@ interface ClientToServerEvents {
 	createChannel(name: string): Channel;
 	deleteChannel(channelId: string): Channel;
 	listChannels(): Channel[];
+	createProfileRole(publicKey: string, roleId: string): ProfileRole;
+	deleteProfileRole(profileRoleId: string): ProfileRole;
+	listProfileRoles(publicKey: string): ProfileRole[];
+	createChannelRolePermission(channelId: string, roleId: string, permissions: number): ChannelRolePermission;
+	deleteChannelRolePermission(id: string): ChannelRolePermission;
+	listChannelRolePermissions(channelId: string): ChannelRolePermission[];
 
 	updateProfile(name: string): Profile;
 	getProfile(public_key?: string): Profile | undefined;
