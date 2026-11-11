@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n\t\t\tDELETE FROM\n\t\t\t\tchannel_role_permissions\n\t\t\tWHERE\n\t\t\t\tid = $1\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tchannel_id as \"channel_id!: Uuid\",\n                role_id as \"role_id!: Uuid\",\n\t\t\t\tpermissions as \"permissions!: ChannelPermissions\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\",\n                updated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t",
+  "query": "\n\t\t\tDELETE FROM\n\t\t\t\tchannel_role_permissions\n\t\t\tWHERE\n\t\t\t\tid = $1\n\t\t\tRETURNING\n\t\t\t\tid as \"id!: Uuid\",\n\t\t\t\tchannel_id as \"channel_id!: Uuid\",\n                role_id as \"role_id!: Uuid\",\n\t\t\t\tpermissions as \"permissions!: permissions::ChannelPermissions\",\n\t\t\t\tcreated_at as \"created_at!: time::OffsetDateTime\",\n                updated_at as \"updated_at!: time::OffsetDateTime\"\n\t\t",
   "describe": {
     "columns": [
       {
@@ -19,7 +19,7 @@
         "type_info": "Blob"
       },
       {
-        "name": "permissions!: ChannelPermissions",
+        "name": "permissions!: permissions::ChannelPermissions",
         "ordinal": 3,
         "type_info": "Integer"
       },
@@ -46,5 +46,5 @@
       false
     ]
   },
-  "hash": "43441d91dbe770d8a0c5af6d53397cda6fa918cb2cd42259666f08f4746761a3"
+  "hash": "9e209c022d829b0619cd800c22b64fae90fd12ff1904312d741d66ea60eda799"
 }
