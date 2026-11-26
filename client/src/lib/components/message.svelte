@@ -13,6 +13,7 @@
 		faCopy,
 		faHashtag
 	} from "@fortawesome/free-solid-svg-icons";
+	import { getUserColor } from "$lib/utils";
 
 	type MessageParams = {
 		url: string;
@@ -24,6 +25,7 @@
 	const { url, message, onEdit, onDelete }: MessageParams = $props();
 
 	let profilePosition = $state<{ x: number; y: number } | null>(null);
+	let userColor = $derived(getUserColor(message.profile.public_key));
 
 	const menuItems: MenuItem[] = $derived([
 		...(onDelete ? [{ label: "Delete", icon: faTrash, danger: true, onSelect: onDelete }] : []),
@@ -82,18 +84,7 @@
 		});
 	}
 
-	function getColor(): string {
-		let hash = 0;
-
-		for (let i = 0; i < message.profile.public_key.length; i++) {
-			const char = message.profile.public_key.charCodeAt(i);
-			hash = (hash << 5) - hash + char;
-		}
-
-		const hue = (hash >>> 0) % 360;
-
-		return `hsl(${hue}, 70%, 55%)`;
-	}
+	
 </script>
 
 <div
@@ -105,7 +96,7 @@
 		type="button"
 		onclick={openProfile}
 		class="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full"
-		style="background-color: {getColor()};"
+		style="background-color: {userColor};"
 	>
 		{message.profile.name[0]}
 	</button>
@@ -188,7 +179,7 @@
 {#if profilePosition}
 	<Profile
 		profile={message.profile}
-		color={getColor()}
+		color={userColor}
 		position={profilePosition}
 		onClose={() => (profilePosition = null)}
 	/>

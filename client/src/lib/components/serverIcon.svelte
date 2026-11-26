@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { faTrash, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
+	import { faHashtag, faTrash, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
 	import { getInfo } from "harmon-lib/http";
 	import { DNSClient } from "harmon-lib/pkdns";
 	import { contextMenu, type MenuItem } from "$lib/components/contextMenu.svelte";
@@ -15,8 +15,13 @@
 	const { onClick, onRemove, publicKey }: ServerIconProps = $props();
 
 	const menuItems: MenuItem[] = $derived([
+		{ label: "Copy PublicKey", icon: faHashtag, onSelect: copyPublicKey },
 		{ label: "Remove Server", icon: faTrash, danger: true, onSelect: onRemove }
 	]);
+
+	function copyPublicKey() {
+		navigator.clipboard.writeText(publicKey);
+	}
 
 	async function get_data() {
 		const dnsClient = new DNSClient();
