@@ -1,11 +1,22 @@
 <script lang="ts">
-	import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
+	import { faTrash, faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
 	import { getInfo } from "harmon-lib/http";
 	import { DNSClient } from "harmon-lib/pkdns";
+	import { contextMenu, type MenuItem } from "$lib/components/contextMenu.svelte";
 	import Loading from "./loading.svelte";
 	import Fa from "svelte-fa";
 
-	const { onClick, publicKey } = $props();
+	type ServerIconProps = {
+		onClick: () => void;
+		onRemove: () => void;
+		publicKey: string;
+	};
+
+	const { onClick, onRemove, publicKey }: ServerIconProps = $props();
+
+	const menuItems: MenuItem[] = $derived([
+		{ label: "Remove Server", icon: faTrash, danger: true, onSelect: onRemove }
+	]);
 
 	async function get_data() {
 		const dnsClient = new DNSClient();
@@ -26,8 +37,9 @@
 
 {#await data}
 	<button
-		onclick={onClick}
 		class="group relative flex h-12 w-12 cursor-pointer flex-col items-center justify-center rounded-xl bg-zinc-600"
+		onclick={onClick}
+		use:contextMenu={menuItems}
 	>
 		<Loading />
 		<div
@@ -38,8 +50,9 @@
 	</button>
 {:then { data, url }}
 	<button
-		onclick={onClick}
 		class="group relative flex cursor-pointer flex-col items-center justify-center rounded-xl"
+		onclick={onClick}
+		use:contextMenu={menuItems}
 	>
 		<img src={`${url}/icon`} alt="icon" class="h-12 w-12 rounded-xl" />
 		<div
@@ -50,8 +63,9 @@
 	</button>
 {:catch error}
 	<button
-		onclick={onClick}
 		class="group relative flex h-12 w-12 cursor-pointer flex-col items-center justify-center rounded-xl bg-zinc-600"
+		onclick={onClick}
+		use:contextMenu={menuItems}
 	>
 		<Fa icon={faTriangleExclamation} />
 		<div
