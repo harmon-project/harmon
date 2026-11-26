@@ -164,6 +164,42 @@ export class Client {
 		return await this._rpc.call("listChannels");
 	}
 
+	async listRoles() {
+		return await this._rpc.call("listRoles");
+	}
+
+	async createRole(name: string, permissions: number) {
+		return await this._rpc.call("createRole", name, permissions);
+	}
+
+	async deleteRole(roleId: string) {
+		return await this._rpc.call("deleteRole", roleId);
+	}
+
+	async createProfileRole(publicKey: string, roleId: string) {
+		return await this._rpc.call("createProfileRole", publicKey, roleId);
+	}
+
+	async deleteProfileRole(profileRoleId: string) {
+		return await this._rpc.call("deleteProfileRole", profileRoleId);
+	}
+
+	async listProfileRoles(publicKey: string) {
+		return await this._rpc.call("listProfileRoles", publicKey);
+	}
+
+	async createChannelRolePermission(channelId: string, roleId: string, permissions: number) {
+		return await this._rpc.call("createChannelRolePermission", channelId, roleId, permissions);
+	}
+
+	async deleteChannelRolePermission(id: string) {
+		return await this._rpc.call("deleteChannelRolePermission", id);
+	}
+
+	async listChannelRolePermissions(channelId: string) {
+		return await this._rpc.call("listChannelRolePermissions", channelId);
+	}
+
 	async getProfile(public_key?: string) {
 		return await this._rpc.call("getProfile", public_key);
 	}
@@ -277,6 +313,25 @@ export interface Profile {
 	public_key: string;
 }
 
+export interface Role {
+	id: string;
+	name: string;
+	permissions: number;
+}
+
+export interface ProfileRole {
+	id: string;
+	profile_id: string;
+	role_id: string;
+}
+
+export interface ChannelRolePermission {
+	id: string;
+	channel_id: string;
+	role_id: string;
+	permissions: number;
+}
+
 export interface ServerInfo {
 	title: string;
 	public_key: string;
@@ -310,14 +365,30 @@ interface ClientToServerEvents {
 	requestChallenge(publicKey: string): ResponseAuthChallenge;
 	confirmChallenge(token: string, signature: string): ResponseConfirmAuthChallenge;
 
-	joinChannel(channelId: string): CurrentChannel;
 	sendMessage(message: string, attachments: string[]): void;
 	deleteMessage(messageId: string): Message;
 	loadMessages(beforeId?: string): Message[];
 
+	joinChannel(channelId: string): CurrentChannel;
 	createChannel(name: string): Channel;
 	deleteChannel(channelId: string): Channel;
 	listChannels(): Channel[];
+
+	createRole(name: string, permissions: number): Role;
+	deleteRole(roleId: string): Role;
+	listRoles(): Role[];
+
+	createProfileRole(publicKey: string, roleId: string): ProfileRole;
+	deleteProfileRole(profileRoleId: string): ProfileRole;
+	listProfileRoles(publicKey: string): ProfileRole[];
+
+	createChannelRolePermission(
+		channelId: string,
+		roleId: string,
+		permissions: number
+	): ChannelRolePermission;
+	deleteChannelRolePermission(id: string): ChannelRolePermission;
+	listChannelRolePermissions(channelId: string): ChannelRolePermission[];
 
 	updateProfile(name: string): Profile;
 	getProfile(public_key?: string): Profile | undefined;

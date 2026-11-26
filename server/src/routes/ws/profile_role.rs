@@ -63,7 +63,7 @@ pub async fn delete_profile_role(app: wspc::App, socket: wspc::Socket, params: w
 pub async fn list_profile_roles(app: wspc::App, socket: wspc::Socket, params: wspc::Params<ListProfileRolesParams>) -> error::Result<Vec<ProfileRole>> {
 	let state = app.get_state::<app::AppState>().unwrap();
 
-	if auth::is_auth(&socket) {
+	if !auth::is_auth(&socket) {
 		return Err(error::Error::Unauthorized);
 	}
 
