@@ -1,4 +1,4 @@
-<script lang="ts">	
+<script lang="ts">
 	import "./layout.css";
 	import icon from "$lib/assets/icon.png";
 	import Toast from "$lib/components/toast.svelte";
