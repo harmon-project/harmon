@@ -1,4 +1,9 @@
 <script lang="ts">
+	import type { Message } from "harmon-lib";
+	import { contextMenu, setActiveMenu, type MenuItem } from "$lib/components/contextMenu.svelte";
+	import Markdown from "$lib/components/markdown.svelte";
+	import Profile from "$lib/components/profile.svelte";
+	import Fa from "svelte-fa";
 	import {
 		faDownload,
 		faFile,
@@ -8,11 +13,6 @@
 		faCopy,
 		faHashtag
 	} from "@fortawesome/free-solid-svg-icons";
-	import type { Message } from "harmon-lib";
-	import Fa from "svelte-fa";
-	import ContextMenu from "$lib/components/contextMenu.svelte";
-	import Markdown from "$lib/components/markdown.svelte";
-	import Profile from "$lib/components/profile.svelte";
 
 	type MessageParams = {
 		url: string;
@@ -23,8 +23,16 @@
 
 	const { url, message, onEdit, onDelete }: MessageParams = $props();
 
-	let menuPosition = $state<{ x: number; y: number } | null>(null);
 	let profilePosition = $state<{ x: number; y: number } | null>(null);
+
+	const menuItems: MenuItem[] = [
+		// svelte-ignore state_referenced_locally
+		...(onDelete ? [{ label: "Delete", icon: faTrash, onSelect: onDelete, danger: true }] : []),
+		// svelte-ignore state_referenced_locally
+		...(onEdit ? [{ label: "Edit", icon: faPencil, onSelect: onEdit }] : []),
+		{ label: "Copy text", icon: faCopy, onSelect: onCopyContent },
+		{ label: "Copy ID", icon: faHashtag, onSelect: onCopyId }
+	];
 
 	function openProfile(event: MouseEvent) {
 		event.preventDefault();
@@ -32,8 +40,23 @@
 	}
 
 	function openMenu(event: MouseEvent) {
-		event.preventDefault();
-		menuPosition = { x: event.clientX, y: event.clientY };
+		const position = {
+			x: event.clientX,
+			y: event.clientY
+		};
+
+		setActiveMenu({
+			position,
+			items: menuItems
+		});
+	}
+
+	function onCopyId() {
+		navigator.clipboard.writeText(message.id);
+	}
+
+	function onCopyContent() {
+		navigator.clipboard.writeText(message.content);
 	}
 
 	function formatDate(dateString: string): string {
@@ -78,7 +101,7 @@
 <div
 	role="listitem"
 	class="group relative flex flex-row gap-1 p-2 hover:bg-gray-800"
-	oncontextmenu={openMenu}
+	use:contextMenu={menuItems}
 >
 	<button
 		type="button"
@@ -105,28 +128,6 @@
 			<Fa icon={faEllipsisH} />
 		</button>
 	</div>
-	<ContextMenu bind:position={menuPosition}>
-		{#if onDelete}
-			<button onclick={onDelete} class="text-red-400">
-				<Fa icon={faTrash} />
-				Delete
-			</button>
-		{/if}
-		{#if onEdit}
-			<button onclick={onEdit}>
-				<Fa icon={faPencil} />
-				Edit
-			</button>
-		{/if}
-		<button onclick={() => navigator.clipboard.writeText(message.content)}>
-			<Fa icon={faCopy} />
-			Copy text
-		</button>
-		<button onclick={() => navigator.clipboard.writeText(message.id)}>
-			<Fa icon={faHashtag} />
-			Copy ID
-		</button>
-	</ContextMenu>
 	<div class="min-w-0 shrink">
 		<div class="flex gap-2">
 			<button
