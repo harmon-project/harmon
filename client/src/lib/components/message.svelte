@@ -26,7 +26,7 @@
 	let profilePosition = $state<{ x: number; y: number } | null>(null);
 
 	const menuItems: MenuItem[] = $derived([
-		...(onDelete ? [{ label: "Delete", icon: faTrash, danger: true, onSelect: onDelete,  }] : []),
+		...(onDelete ? [{ label: "Delete", icon: faTrash, danger: true, onSelect: onDelete }] : []),
 		...(onEdit ? [{ label: "Edit", icon: faPencil, onSelect: onEdit }] : []),
 		{ label: "Copy text", icon: faCopy, onSelect: onCopyContent },
 		{ label: "Copy ID", icon: faHashtag, onSelect: onCopyId }

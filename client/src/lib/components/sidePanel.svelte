@@ -21,7 +21,9 @@
 					currentServer.set(publicKey);
 				}}
 				onRemove={() => {
-					servers.update((serverList) => serverList.filter((server) => server !== publicKey));
+					servers.update((serverList) =>
+						serverList.filter((server) => server !== publicKey)
+					);
 					if ($currentServer === publicKey) currentServer.set(undefined);
 				}}
 				{publicKey}
